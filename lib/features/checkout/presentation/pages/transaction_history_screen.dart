@@ -30,6 +30,37 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     }
   }
 
+  Future<void> _openTransactionDetails(
+      Map<String, dynamic> trx, ThemeData theme, String userRole) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final detail = await context
+          .read<CheckoutBloc>()
+          .repository
+          .getTransactionById(trx['id'].toString());
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      _showTransactionDetails(detail, theme, userRole);
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e
+              .toString()
+              .replaceAll('Exception: ', '')
+              .replaceAll('ServerFailure: ', '')),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+  }
+
   void _showTransactionDetails(Map<String, dynamic> trx, ThemeData theme, String userRole) {
     final bool isVoided = trx['status']?.toString().toLowerCase() == 'void';
     final items = trx['items'] as List<dynamic>? ?? [];
@@ -50,10 +81,11 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
             border: Border.all(color: Colors.white10),
           ),
           padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               Center(
                 child: Container(
                   width: 40,
@@ -146,6 +178,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                 ),
               ],
             ],
+            ),
           ),
         );
       },
@@ -235,7 +268,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                     : '';
 
                 return ListTile(
-                  onTap: () => _showTransactionDetails(trx, theme, userRole),
+                  onTap: () => _openTransactionDetails(trx, theme, userRole),
                   tileColor: theme.cardColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

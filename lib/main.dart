@@ -12,6 +12,7 @@ import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/pages/splash_screen.dart';
+import 'core/network/realtime_service.dart';
 
 import 'features/cashier_session/data/repositories/cashier_session_repository_impl.dart';
 import 'features/cashier_session/domain/repositories/cashier_session_repository.dart';
@@ -61,12 +62,17 @@ void main() async {
     apiClient: apiClient,
   );
 
+  final realtimeService = RealtimeService(
+    storageService: storageService,
+  );
+
   runApp(MorrusPOSApp(
     storageService: storageService,
     authRepository: authRepository,
     cashierSessionRepository: cashierSessionRepository,
     productsRepository: productsRepository,
     checkoutRepository: checkoutRepository,
+    realtimeService: realtimeService,
   ));
 }
 
@@ -76,6 +82,7 @@ class MorrusPOSApp extends StatelessWidget {
   final CashierSessionRepository cashierSessionRepository;
   final ProductsRepository productsRepository;
   final CheckoutRepository checkoutRepository;
+  final RealtimeService realtimeService;
 
   const MorrusPOSApp({
     super.key,
@@ -84,6 +91,7 @@ class MorrusPOSApp extends StatelessWidget {
     required this.cashierSessionRepository,
     required this.productsRepository,
     required this.checkoutRepository,
+    required this.realtimeService,
   });
 
   @override
@@ -94,6 +102,7 @@ class MorrusPOSApp extends StatelessWidget {
         RepositoryProvider<CashierSessionRepository>.value(value: cashierSessionRepository),
         RepositoryProvider<ProductsRepository>.value(value: productsRepository),
         RepositoryProvider<CheckoutRepository>.value(value: checkoutRepository),
+        RepositoryProvider<RealtimeService>.value(value: realtimeService),
       ],
       child: MultiBlocProvider(
         providers: [

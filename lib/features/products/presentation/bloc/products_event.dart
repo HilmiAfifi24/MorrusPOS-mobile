@@ -33,3 +33,21 @@ class FilterCategorySelected extends ProductsEvent {
   @override
   List<Object?> get props => [categoryId];
 }
+
+class UpdateProductsStock extends ProductsEvent {
+  final List<Map<String, dynamic>> updates;
+
+  const UpdateProductsStock(this.updates);
+
+  @override
+  List<Object?> get props => [updates];
+}
+
+class ReloadProductsSilently extends ProductsEvent {
+  final String outletId;
+
+  const ReloadProductsSilently(this.outletId);
+
+  @override
+  List<Object?> get props => [outletId];
+}

@@ -14,6 +14,8 @@ class ProductsBloc extends Bloc<ProductsEvent, ProductsState> {
     on<LoadProducts>(_onLoadProducts);
     on<SearchProducts>(_onSearchProducts);
     on<FilterCategorySelected>(_onFilterCategorySelected);
+    on<UpdateProductsStock>(_onUpdateProductsStock);
+    on<ReloadProductsSilently>(_onReloadProductsSilently);
   }
 
   Future<void> _onLoadProducts(LoadProducts event, Emitter<ProductsState> emit) async {
@@ -62,6 +64,51 @@ class ProductsBloc extends Bloc<ProductsEvent, ProductsState> {
       clearSelectedCategory: event.categoryId == null,
       filteredProducts: _filter(state.allProducts, state.searchQuery, event.categoryId),
     ));
+  }
+
+  void _onUpdateProductsStock(UpdateProductsStock event, Emitter<ProductsState> emit) {
+    final updatedProducts = state.allProducts.map((product) {
+      final update = event.updates.firstWhere(
+        (u) => u['productId'] == product.id,
+        orElse: () => <String, dynamic>{},
+      );
+      if (update.isNotEmpty) {
+        return product.copyWith(qtyOnHand: (update['qty'] as num).toDouble());
+      }
+      return product;
+    }).toList();
+
+    emit(state.copyWith(
+      allProducts: updatedProducts,
+      filteredProducts: _filter(updatedProducts, state.searchQuery, state.selectedCategoryId),
+    ));
+  }
+
+  Future<void> _onReloadProductsSilently(ReloadProductsSilently event, Emitter<ProductsState> emit) async {
+    try {
+      final products = await repository.getProducts(event.outletId);
+      
+      final Set<String> categoryIds = {};
+      final Map<String, String> categoryIdToName = {};
+      
+      for (final p in products) {
+        if (p.categoryId != null && p.categoryName != null) {
+          categoryIds.add(p.categoryId!);
+          categoryIdToName[p.categoryId!] = p.categoryName!;
+        }
+      }
+
+      final categoriesList = categoryIds.toList();
+
+      emit(state.copyWith(
+        allProducts: products,
+        filteredProducts: _filter(products, state.searchQuery, state.selectedCategoryId),
+        categories: categoriesList,
+        categoryIdToName: categoryIdToName,
+      ));
+    } catch (_) {
+      // Fail silently to not disrupt the user interface during real-time updates
+    }
   }
 
   List<ProductEntity> _filter(List<ProductEntity> products, String query, String? categoryId) {

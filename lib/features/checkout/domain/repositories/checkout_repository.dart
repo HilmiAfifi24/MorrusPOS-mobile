@@ -10,5 +10,6 @@ abstract class CheckoutRepository {
     required List<Map<String, dynamic>> payments,
   });
   Future<List<Map<String, dynamic>>> getRecentTransactions(String outletId);
+  Future<Map<String, dynamic>> getTransactionById(String id);
   Future<void> voidTransaction(String id, String reason);
 }

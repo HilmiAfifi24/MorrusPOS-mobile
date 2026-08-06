@@ -53,8 +53,12 @@ class CashierSessionRepositoryImpl implements CashierSessionRepository {
         String errMsg = 'Gagal membuka sesi kasir.';
         try {
           final errorData = jsonDecode(response.body);
-          if (errorData['message'] != null) {
+          if (errorData['error'] != null) {
+            errMsg = errorData['error'];
+          } else if (errorData['message'] != null) {
             errMsg = errorData['message'];
+          } else if (errorData['errors'] != null) {
+            errMsg = errorData['errors'].toString();
           }
         } catch (_) {}
         throw ServerFailure(errMsg);
@@ -82,8 +86,12 @@ class CashierSessionRepositoryImpl implements CashierSessionRepository {
         String errMsg = 'Gagal menutup sesi kasir.';
         try {
           final errorData = jsonDecode(response.body);
-          if (errorData['message'] != null) {
+          if (errorData['error'] != null) {
+            errMsg = errorData['error'];
+          } else if (errorData['message'] != null) {
             errMsg = errorData['message'];
+          } else if (errorData['errors'] != null) {
+            errMsg = errorData['errors'].toString();
           }
         } catch (_) {}
         throw ServerFailure(errMsg);

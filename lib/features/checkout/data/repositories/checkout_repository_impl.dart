@@ -96,6 +96,22 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
   }
 
   @override
+  Future<Map<String, dynamic>> getTransactionById(String id) async {
+    try {
+      final response = await apiClient.get('${ApiEndpoints.transactions}/$id');
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } else {
+        throw ServerFailure('Gagal mengambil detail transaksi.');
+      }
+    } catch (e) {
+      if (e is Failure) rethrow;
+      throw ServerFailure('Gagal memuat detail transaksi: koneksi bermasalah.');
+    }
+  }
+
+  @override
   Future<void> voidTransaction(String id, String reason) async {
     try {
       final response = await apiClient.post(

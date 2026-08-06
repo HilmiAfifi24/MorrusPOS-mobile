@@ -10,6 +10,7 @@ import '../../../cashier_session/presentation/pages/cashier_session_screen.dart'
 import '../bloc/products_bloc.dart';
 import '../bloc/products_event.dart';
 import '../bloc/products_state.dart';
+import '../../../../core/network/realtime_service.dart';
 import '../../../checkout/presentation/bloc/cart_bloc.dart';
 import '../../../checkout/presentation/bloc/cart_event.dart';
 import '../../../checkout/presentation/bloc/cart_state.dart';
@@ -33,6 +34,25 @@ class _PosScreenState extends State<PosScreen> {
   void initState() {
     super.initState();
     _loadInitialData();
+    _initRealtimeConnection();
+  }
+
+  void _initRealtimeConnection() {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is Authenticated) {
+      final outletId = authState.selectedOutletId ?? '';
+      if (outletId.isNotEmpty) {
+        final realtimeService = RepositoryProvider.of<RealtimeService>(context);
+        realtimeService.onStockUpdate = (eventOutletId, updates) {
+          if (eventOutletId == outletId) {
+            context.read<ProductsBloc>().add(ReloadProductsSilently(outletId));
+          }
+        };
+        realtimeService.connect(outletId).catchError((e) {
+          debugPrint('RealtimeService connection error: $e');
+        });
+      }
+    }
   }
 
   void _loadInitialData() {
@@ -49,6 +69,13 @@ class _PosScreenState extends State<PosScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    try {
+      final realtimeService = RepositoryProvider.of<RealtimeService>(context);
+      realtimeService.onStockUpdate = null;
+      realtimeService.disconnect();
+    } catch (e) {
+      debugPrint('Error disconnecting realtime service: $e');
+    }
     super.dispose();
   }
 
