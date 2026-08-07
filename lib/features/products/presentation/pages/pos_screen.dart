@@ -17,7 +17,6 @@ import '../../../checkout/presentation/bloc/cart_state.dart';
 import '../../../checkout/presentation/pages/checkout_screen.dart';
 import '../../../checkout/presentation/pages/transaction_history_screen.dart';
 import '../../../checkout/presentation/pages/settings_screen.dart';
-import '../../../dashboard/presentation/pages/cashier_dashboard_screen.dart';
 
 class PosScreen extends StatefulWidget {
   final StorageService storageService;
@@ -30,7 +29,6 @@ class PosScreen extends StatefulWidget {
 
 class _PosScreenState extends State<PosScreen> {
   final _searchController = TextEditingController();
-  int _selectedIndex = 0;
 
   @override
   void initState() {
@@ -349,10 +347,8 @@ class _PosScreenState extends State<PosScreen> {
           ),
         ],
       ),
-      body: _selectedIndex == 1
-          ? const CashierDashboardScreen()
-          : BlocBuilder<CashierSessionBloc, CashierSessionState>(
-              builder: (context, sessionState) {
+      body: BlocBuilder<CashierSessionBloc, CashierSessionState>(
+        builder: (context, sessionState) {
           if (sessionState is! ActiveSessionOpen) {
             return Center(
               child: Padding(
@@ -679,24 +675,6 @@ class _PosScreenState extends State<PosScreen> {
             ],
           );
         },
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.point_of_sale),
-            label: 'Penjualan',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-        ],
       ),
     );
   }
