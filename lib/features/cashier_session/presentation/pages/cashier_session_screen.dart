@@ -21,6 +21,20 @@ class _CashierSessionScreenState extends State<CashierSessionScreen> {
   final _formKey = GlobalKey<FormState>();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authState = context.read<AuthBloc>().state;
+      if (authState is Authenticated) {
+        final outletId = authState.selectedOutletId;
+        if (outletId != null && outletId.isNotEmpty) {
+          context.read<CashierSessionBloc>().add(CheckActiveSession(outletId));
+        }
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _openingCashController.dispose();
     _actualCashController.dispose();

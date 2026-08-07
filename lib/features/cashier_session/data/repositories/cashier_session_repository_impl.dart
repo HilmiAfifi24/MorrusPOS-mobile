@@ -27,7 +27,18 @@ class CashierSessionRepositoryImpl implements CashierSessionRepository {
         if (data == null) return null;
         return CashierSessionModel.fromJson(data);
       } else {
-        throw ServerFailure('Gagal memeriksa sesi kasir aktif.');
+        String errMsg = 'Gagal memeriksa sesi kasir aktif.';
+        try {
+          final errorData = jsonDecode(response.body);
+          if (errorData['error'] != null) {
+            errMsg = errorData['error'];
+          } else if (errorData['message'] != null) {
+            errMsg = errorData['message'];
+          } else if (errorData['errors'] != null) {
+            errMsg = errorData['errors'].toString();
+          }
+        } catch (_) {}
+        throw ServerFailure(errMsg);
       }
     } catch (e) {
       if (e is Failure) rethrow;
