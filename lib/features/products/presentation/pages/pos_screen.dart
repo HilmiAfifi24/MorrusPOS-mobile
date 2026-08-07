@@ -48,6 +48,10 @@ class _PosScreenState extends State<PosScreen> {
             context.read<ProductsBloc>().add(ReloadProductsSilently(outletId));
           }
         };
+        // After automatic SignalR reconnect, reload products to catch any missed updates
+        realtimeService.onReconnected = () {
+          context.read<ProductsBloc>().add(ReloadProductsSilently(outletId));
+        };
         realtimeService.connect(outletId).catchError((e) {
           debugPrint('RealtimeService connection error: $e');
         });
@@ -72,6 +76,7 @@ class _PosScreenState extends State<PosScreen> {
     try {
       final realtimeService = RepositoryProvider.of<RealtimeService>(context);
       realtimeService.onStockUpdate = null;
+      realtimeService.onReconnected = null;
       realtimeService.disconnect();
     } catch (e) {
       debugPrint('Error disconnecting realtime service: $e');
