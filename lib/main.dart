@@ -26,6 +26,7 @@ import 'features/checkout/data/repositories/checkout_repository_impl.dart';
 import 'features/checkout/domain/repositories/checkout_repository.dart';
 import 'features/checkout/presentation/bloc/cart_bloc.dart';
 import 'features/checkout/presentation/bloc/checkout_bloc.dart';
+import 'features/dashboard/data/repositories/dashboard_repository.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -66,6 +67,8 @@ void main() async {
     storageService: storageService,
   );
 
+  final dashboardRepository = DashboardRepository(apiClient: apiClient);
+
   runApp(MorrusPOSApp(
     storageService: storageService,
     authRepository: authRepository,
@@ -73,6 +76,7 @@ void main() async {
     productsRepository: productsRepository,
     checkoutRepository: checkoutRepository,
     realtimeService: realtimeService,
+    dashboardRepository: dashboardRepository,
   ));
 }
 
@@ -83,6 +87,7 @@ class MorrusPOSApp extends StatelessWidget {
   final ProductsRepository productsRepository;
   final CheckoutRepository checkoutRepository;
   final RealtimeService realtimeService;
+  final DashboardRepository dashboardRepository;
 
   const MorrusPOSApp({
     super.key,
@@ -92,6 +97,7 @@ class MorrusPOSApp extends StatelessWidget {
     required this.productsRepository,
     required this.checkoutRepository,
     required this.realtimeService,
+    required this.dashboardRepository,
   });
 
   @override
@@ -103,6 +109,7 @@ class MorrusPOSApp extends StatelessWidget {
         RepositoryProvider<ProductsRepository>.value(value: productsRepository),
         RepositoryProvider<CheckoutRepository>.value(value: checkoutRepository),
         RepositoryProvider<RealtimeService>.value(value: realtimeService),
+        RepositoryProvider<DashboardRepository>.value(value: dashboardRepository),
       ],
       child: MultiBlocProvider(
         providers: [
