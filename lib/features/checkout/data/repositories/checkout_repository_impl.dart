@@ -39,6 +39,8 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
     required double grandTotal,
     required List<Map<String, dynamic>> items,
     required List<Map<String, dynamic>> payments,
+    String? voucherCode,
+    String? appliedPromoCode,
   }) async {
     try {
       final transactionId = _generateUuid();
@@ -53,6 +55,8 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
         'grandTotal': grandTotal,
         'items': items,
         'payments': payments,
+        'voucherCode': voucherCode,
+        'appliedPromoCode': appliedPromoCode,
       };
 
       final response = await apiClient.post(ApiEndpoints.checkout, body: body);
@@ -72,6 +76,41 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
     } catch (e) {
       if (e is Failure) rethrow;
       throw ServerFailure('Gagal melakukan checkout: koneksi bermasalah.');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> previewPricing({
+    required String outletId,
+    required List<Map<String, dynamic>> items,
+    String? voucherCode,
+  }) async {
+    try {
+      final response = await apiClient.post(
+        '${ApiEndpoints.transactions}/pricing-preview',
+        body: {
+          'outletId': outletId,
+          'channel': 'pos',
+          'voucherCode': voucherCode,
+          'items': items,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+
+      String errMsg = 'Gagal menghitung pricing checkout.';
+      try {
+        final errorData = jsonDecode(response.body);
+        if (errorData['message'] != null) {
+          errMsg = errorData['message'];
+        }
+      } catch (_) {}
+      throw ServerFailure(errMsg);
+    } catch (e) {
+      if (e is Failure) rethrow;
+      throw ServerFailure('Gagal memuat pricing checkout: koneksi bermasalah.');
     }
   }
 

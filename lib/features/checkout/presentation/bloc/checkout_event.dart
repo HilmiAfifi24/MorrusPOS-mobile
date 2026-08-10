@@ -13,6 +13,7 @@ class SubmitCheckout extends CheckoutEvent {
   final String paymentMethod;
   final double paymentAmount;
   final String? referenceNumber;
+  final String? voucherCode;
   final String outletId;
   final String cashierSessionId;
 
@@ -21,6 +22,7 @@ class SubmitCheckout extends CheckoutEvent {
     required this.paymentMethod,
     required this.paymentAmount,
     this.referenceNumber,
+    this.voucherCode,
     required this.outletId,
     required this.cashierSessionId,
   });
@@ -31,6 +33,7 @@ class SubmitCheckout extends CheckoutEvent {
         paymentMethod,
         paymentAmount,
         referenceNumber,
+        voucherCode,
         outletId,
         cashierSessionId,
       ];

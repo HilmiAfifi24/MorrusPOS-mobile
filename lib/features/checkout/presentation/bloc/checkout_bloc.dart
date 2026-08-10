@@ -18,17 +18,27 @@ class CheckoutBloc extends Bloc<CheckoutEvent, CheckoutState> {
   Future<void> _onSubmitCheckout(SubmitCheckout event, Emitter<CheckoutState> emit) async {
     emit(CheckoutLoading());
     try {
-      final double subtotal = event.items.fold(0.0, (sum, item) => sum + (item.unitPrice * item.qty));
-      final double discountTotal = event.items.fold(0.0, (sum, item) => sum + (item.discountAmount * item.qty));
-      final double taxTotal = 0.0;
-      final double grandTotal = subtotal - discountTotal + taxTotal;
-
       final List<Map<String, dynamic>> itemsPayload = event.items.map((item) => {
         'productId': item.productId,
         'qty': item.qty,
         'unitPrice': item.unitPrice,
         'discountAmount': item.discountAmount,
       }).toList();
+
+      final pricing = await repository.previewPricing(
+        outletId: event.outletId,
+        items: itemsPayload,
+        voucherCode: event.voucherCode,
+      );
+
+      final double subtotal = (pricing['subtotal'] as num?)?.toDouble() ?? 0.0;
+      final double manualDiscountTotal = (pricing['manualDiscountTotal'] as num?)?.toDouble() ?? 0.0;
+      final double promoDiscountTotal = (pricing['promoDiscountTotal'] as num?)?.toDouble() ?? 0.0;
+      final double voucherDiscountTotal = (pricing['voucherDiscountTotal'] as num?)?.toDouble() ?? 0.0;
+      final double taxTotal = (pricing['taxTotal'] as num?)?.toDouble() ?? 0.0;
+      final double grandTotal = (pricing['grandTotal'] as num?)?.toDouble() ?? 0.0;
+      final String? appliedPromoCode = (pricing['appliedPromo'] as Map<String, dynamic>?)?['code'] as String?;
+      final double discountTotal = manualDiscountTotal + promoDiscountTotal + voucherDiscountTotal;
 
       final List<Map<String, dynamic>> paymentsPayload = [
         {
@@ -47,6 +57,8 @@ class CheckoutBloc extends Bloc<CheckoutEvent, CheckoutState> {
         grandTotal: grandTotal,
         items: itemsPayload,
         payments: paymentsPayload,
+        voucherCode: event.voucherCode,
+        appliedPromoCode: appliedPromoCode,
       );
 
       emit(CheckoutSuccess(result));
