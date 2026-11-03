@@ -1,6 +1,7 @@
 import 'dart:convert';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/network/api_error.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/repositories/cashier_session_repository.dart';
 import '../../domain/entities/cashier_session_entity.dart';
@@ -27,18 +28,7 @@ class CashierSessionRepositoryImpl implements CashierSessionRepository {
         if (data == null) return null;
         return CashierSessionModel.fromJson(data);
       } else {
-        String errMsg = 'Gagal memeriksa sesi kasir aktif.';
-        try {
-          final errorData = jsonDecode(response.body);
-          if (errorData['error'] != null) {
-            errMsg = errorData['error'];
-          } else if (errorData['message'] != null) {
-            errMsg = errorData['message'];
-          } else if (errorData['errors'] != null) {
-            errMsg = errorData['errors'].toString();
-          }
-        } catch (_) {}
-        throw ServerFailure(errMsg);
+        throw failureFromResponse(response, 'Gagal memeriksa sesi kasir aktif.');
       }
     } catch (e) {
       if (e is Failure) rethrow;
@@ -61,18 +51,7 @@ class CashierSessionRepositoryImpl implements CashierSessionRepository {
         final data = jsonDecode(response.body);
         return CashierSessionModel.fromJson(data);
       } else {
-        String errMsg = 'Gagal membuka sesi kasir.';
-        try {
-          final errorData = jsonDecode(response.body);
-          if (errorData['error'] != null) {
-            errMsg = errorData['error'];
-          } else if (errorData['message'] != null) {
-            errMsg = errorData['message'];
-          } else if (errorData['errors'] != null) {
-            errMsg = errorData['errors'].toString();
-          }
-        } catch (_) {}
-        throw ServerFailure(errMsg);
+        throw failureFromResponse(response, 'Gagal membuka sesi kasir.');
       }
     } catch (e) {
       if (e is Failure) rethrow;
@@ -94,18 +73,7 @@ class CashierSessionRepositoryImpl implements CashierSessionRepository {
         final data = jsonDecode(response.body);
         return CashierSessionModel.fromJson(data);
       } else {
-        String errMsg = 'Gagal menutup sesi kasir.';
-        try {
-          final errorData = jsonDecode(response.body);
-          if (errorData['error'] != null) {
-            errMsg = errorData['error'];
-          } else if (errorData['message'] != null) {
-            errMsg = errorData['message'];
-          } else if (errorData['errors'] != null) {
-            errMsg = errorData['errors'].toString();
-          }
-        } catch (_) {}
-        throw ServerFailure(errMsg);
+        throw failureFromResponse(response, 'Gagal menutup sesi kasir.');
       }
     } catch (e) {
       if (e is Failure) rethrow;

@@ -59,4 +59,8 @@ class StorageService {
   Future<bool> setSelectedOutletId(String outletId) async {
     return await _prefs.setString(_keySelectedOutletId, outletId);
   }
+
+  Future<bool> clearSelectedOutletId() async {
+    return await _prefs.remove(_keySelectedOutletId);
+  }
 }

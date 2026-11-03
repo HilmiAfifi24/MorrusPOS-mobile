@@ -6,5 +6,6 @@ abstract class AuthRepository {
   Future<void> logout();
   Future<String?> getSelectedOutletId();
   Future<void> saveSelectedOutletId(String outletId);
+  Future<void> clearSelectedOutletId();
   Future<List<Map<String, dynamic>>> getOutlets();
 }

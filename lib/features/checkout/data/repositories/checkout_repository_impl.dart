@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/network/api_error.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/repositories/checkout_repository.dart';
 
@@ -64,14 +65,7 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
       if (response.statusCode == 201 || response.statusCode == 200) {
         return jsonDecode(response.body) as Map<String, dynamic>;
       } else {
-        String errMsg = 'Gagal memproses checkout.';
-        try {
-          final errorData = jsonDecode(response.body);
-          if (errorData['message'] != null) {
-            errMsg = errorData['message'];
-          }
-        } catch (_) {}
-        throw ServerFailure(errMsg);
+        throw failureFromResponse(response, 'Gagal memproses checkout.');
       }
     } catch (e) {
       if (e is Failure) rethrow;
@@ -100,14 +94,7 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
         return jsonDecode(response.body) as Map<String, dynamic>;
       }
 
-      String errMsg = 'Gagal menghitung pricing checkout.';
-      try {
-        final errorData = jsonDecode(response.body);
-        if (errorData['message'] != null) {
-          errMsg = errorData['message'];
-        }
-      } catch (_) {}
-      throw ServerFailure(errMsg);
+      throw failureFromResponse(response, 'Gagal menghitung pricing checkout.');
     } catch (e) {
       if (e is Failure) rethrow;
       throw ServerFailure('Gagal memuat pricing checkout: koneksi bermasalah.');
@@ -126,7 +113,7 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
         final List<dynamic> data = jsonDecode(response.body);
         return data.map((x) => x as Map<String, dynamic>).toList();
       } else {
-        throw ServerFailure('Gagal mengambil histori transaksi.');
+        throw failureFromResponse(response, 'Gagal mengambil histori transaksi.');
       }
     } catch (e) {
       if (e is Failure) rethrow;
@@ -142,7 +129,7 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
       if (response.statusCode == 200) {
         return jsonDecode(response.body) as Map<String, dynamic>;
       } else {
-        throw ServerFailure('Gagal mengambil detail transaksi.');
+        throw failureFromResponse(response, 'Gagal mengambil detail transaksi.');
       }
     } catch (e) {
       if (e is Failure) rethrow;
@@ -159,14 +146,7 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
       );
 
       if (response.statusCode != 200) {
-        String errMsg = 'Gagal membatalkan transaksi.';
-        try {
-          final errorData = jsonDecode(response.body);
-          if (errorData['message'] != null) {
-            errMsg = errorData['message'];
-          }
-        } catch (_) {}
-        throw ServerFailure(errMsg);
+        throw failureFromResponse(response, 'Gagal membatalkan transaksi.');
       }
     } catch (e) {
       if (e is Failure) rethrow;

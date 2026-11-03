@@ -21,6 +21,8 @@ class AuthRepositoryImpl implements AuthRepository {
     await storageService.saveUser(userModel.toJson());
     if (userModel.outletId != null) {
       await storageService.setSelectedOutletId(userModel.outletId!);
+    } else {
+      await storageService.clearSelectedOutletId();
     }
     return userModel;
   }
@@ -47,6 +49,11 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> saveSelectedOutletId(String outletId) async {
     await storageService.setSelectedOutletId(outletId);
+  }
+
+  @override
+  Future<void> clearSelectedOutletId() async {
+    await storageService.clearSelectedOutletId();
   }
 
   @override

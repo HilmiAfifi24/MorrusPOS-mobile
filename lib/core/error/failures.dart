@@ -22,3 +22,12 @@ class CacheFailure extends Failure {
 class NetworkFailure extends Failure {
   const NetworkFailure() : super('Koneksi internet bermasalah.');
 }
+
+class CapabilityDisabledFailure extends Failure {
+  final String capabilityCode;
+
+  const CapabilityDisabledFailure(this.capabilityCode, super.message);
+
+  @override
+  List<Object> get props => [capabilityCode, message];
+}

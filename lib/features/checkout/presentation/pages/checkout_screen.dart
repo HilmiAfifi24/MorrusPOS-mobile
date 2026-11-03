@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/constants/capability_codes.dart';
+import '../../../capabilities/presentation/bloc/capability_bloc.dart';
 import '../bloc/cart_bloc.dart';
 import '../bloc/checkout_bloc.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
@@ -74,10 +76,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         'unitPrice': item.unitPrice,
         'discountAmount': item.discountAmount,
       }).toList();
+      final capabilityState = context.read<CapabilityBloc>().state;
+      final canUseVoucher = capabilityState is CapabilityLoaded &&
+          capabilityState.has(CapabilityCodes.pricingVouchers);
       final result = await context.read<CheckoutBloc>().repository.previewPricing(
         outletId: outletId,
         items: itemsPayload,
-        voucherCode: _voucherController.text.trim().isEmpty ? null : _voucherController.text.trim(),
+        voucherCode: canUseVoucher && _voucherController.text.trim().isNotEmpty
+            ? _voucherController.text.trim()
+            : null,
       );
       if (!mounted) return;
       setState(() {
@@ -104,6 +111,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final cartState = context.read<CartBloc>().state;
       final authState = context.read<AuthBloc>().state;
       final sessionState = context.read<CashierSessionBloc>().state;
+      final capabilityState = context.read<CapabilityBloc>().state;
+      final canUseVoucher = capabilityState is CapabilityLoaded &&
+          capabilityState.has(CapabilityCodes.pricingVouchers);
 
       String outletId = '';
       if (authState is Authenticated) {
@@ -130,7 +140,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             paymentMethod: _selectedPaymentMethod,
             paymentAmount: _selectedPaymentMethod == 'cash' ? grandTotal : amount,
             referenceNumber: _referenceController.text.trim().isEmpty ? null : _referenceController.text.trim(),
-            voucherCode: _voucherController.text.trim().isEmpty ? null : _voucherController.text.trim(),
+            voucherCode: canUseVoucher && _voucherController.text.trim().isNotEmpty
+                ? _voucherController.text.trim()
+                : null,
             outletId: outletId,
             cashierSessionId: sessionId,
           ));
@@ -141,6 +153,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cartState = context.watch<CartBloc>().state;
+    final capabilityState = context.watch<CapabilityBloc>().state;
+    final canUseVoucher = capabilityState is CapabilityLoaded &&
+        capabilityState.has(CapabilityCodes.pricingVouchers);
     final subtotal = ((_preview?['subtotal'] as num?)?.toDouble()) ?? cartState.subtotal;
     final manualDiscount = ((_preview?['manualDiscountTotal'] as num?)?.toDouble()) ?? cartState.discountTotal;
     final promoDiscount = ((_preview?['promoDiscountTotal'] as num?)?.toDouble()) ?? 0.0;
@@ -254,16 +269,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _voucherController,
-                        decoration: const InputDecoration(
-                          labelText: 'Kode Voucher',
-                          prefixIcon: Icon(Icons.local_offer_outlined),
+                      if (canUseVoucher)
+                        TextFormField(
+                          controller: _voucherController,
+                          decoration: const InputDecoration(
+                            labelText: 'Kode Voucher',
+                            prefixIcon: Icon(Icons.local_offer_outlined),
+                          ),
+                          onChanged: (_) {
+                            _refreshPreview();
+                          },
                         ),
-                        onChanged: (_) {
-                          _refreshPreview();
-                        },
-                      ),
                       if (_isPreviewLoading) ...[
                         const SizedBox(height: 8),
                         const Text('Menghitung pricing terbaru...', style: TextStyle(fontSize: 12, color: Colors.white60)),

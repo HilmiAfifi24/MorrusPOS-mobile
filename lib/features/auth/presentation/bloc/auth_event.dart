@@ -28,4 +28,6 @@ class OutletSelected extends AuthEvent {
   List<Object?> get props => [outletId];
 }
 
+class OutletSelectionRequested extends AuthEvent {}
+
 class LogoutRequested extends AuthEvent {}

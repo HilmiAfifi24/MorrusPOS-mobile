@@ -1,6 +1,7 @@
 import 'dart:convert';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/network/api_client.dart';
+import '../../../../core/network/api_error.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/repositories/products_repository.dart';
 import '../../domain/entities/product_entity.dart';
@@ -23,7 +24,7 @@ class ProductsRepositoryImpl implements ProductsRepository {
         final List<dynamic> data = jsonDecode(response.body);
         return data.map((json) => ProductModel.fromJson(json)).toList();
       } else {
-        throw ServerFailure('Gagal memuat produk dari server.');
+        throw failureFromResponse(response, 'Gagal memuat produk dari server.');
       }
     } catch (e) {
       if (e is Failure) rethrow;

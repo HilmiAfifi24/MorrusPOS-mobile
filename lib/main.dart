@@ -27,6 +27,9 @@ import 'features/checkout/domain/repositories/checkout_repository.dart';
 import 'features/checkout/presentation/bloc/cart_bloc.dart';
 import 'features/checkout/presentation/bloc/checkout_bloc.dart';
 import 'features/dashboard/data/repositories/dashboard_repository.dart';
+import 'features/capabilities/data/repositories/capability_repository_impl.dart';
+import 'features/capabilities/domain/repositories/capability_repository.dart';
+import 'features/capabilities/presentation/bloc/capability_bloc.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -68,6 +71,9 @@ void main() async {
   );
 
   final dashboardRepository = DashboardRepository(apiClient: apiClient);
+  final capabilityRepository = CapabilityRepositoryImpl(apiClient: apiClient);
+  final capabilityBloc = CapabilityBloc(repository: capabilityRepository);
+  apiClient.onCapabilityDisabled = (_) => capabilityBloc.add(const CapabilitiesStale());
 
   runApp(MorrusPOSApp(
     storageService: storageService,
@@ -77,6 +83,8 @@ void main() async {
     checkoutRepository: checkoutRepository,
     realtimeService: realtimeService,
     dashboardRepository: dashboardRepository,
+    capabilityRepository: capabilityRepository,
+    capabilityBloc: capabilityBloc,
   ));
 }
 
@@ -88,6 +96,8 @@ class MorrusPOSApp extends StatelessWidget {
   final CheckoutRepository checkoutRepository;
   final RealtimeService realtimeService;
   final DashboardRepository dashboardRepository;
+  final CapabilityRepository capabilityRepository;
+  final CapabilityBloc capabilityBloc;
 
   const MorrusPOSApp({
     super.key,
@@ -98,6 +108,8 @@ class MorrusPOSApp extends StatelessWidget {
     required this.checkoutRepository,
     required this.realtimeService,
     required this.dashboardRepository,
+    required this.capabilityRepository,
+    required this.capabilityBloc,
   });
 
   @override
@@ -110,6 +122,7 @@ class MorrusPOSApp extends StatelessWidget {
         RepositoryProvider<CheckoutRepository>.value(value: checkoutRepository),
         RepositoryProvider<RealtimeService>.value(value: realtimeService),
         RepositoryProvider<DashboardRepository>.value(value: dashboardRepository),
+        RepositoryProvider<CapabilityRepository>.value(value: capabilityRepository),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -128,6 +141,7 @@ class MorrusPOSApp extends StatelessWidget {
           BlocProvider<CheckoutBloc>(
             create: (context) => CheckoutBloc(repository: checkoutRepository),
           ),
+          BlocProvider<CapabilityBloc>.value(value: capabilityBloc),
         ],
         child: MaterialApp(
           title: 'MorrusPOS Mobile',

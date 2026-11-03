@@ -13,6 +13,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AppStarted>(_onAppStarted);
     on<LoginSubmitted>(_onLoginSubmitted);
     on<OutletSelected>(_onOutletSelected);
+    on<OutletSelectionRequested>(_onOutletSelectionRequested);
     on<LogoutRequested>(_onLogoutRequested);
   }
 
@@ -52,6 +53,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         user: currentState.user,
         selectedOutletId: event.outletId,
       ));
+    }
+  }
+
+  Future<void> _onOutletSelectionRequested(
+      OutletSelectionRequested event, Emitter<AuthState> emit) async {
+    final currentState = state;
+    if (currentState is Authenticated) {
+      await authRepository.clearSelectedOutletId();
+      emit(Authenticated(user: currentState.user));
     }
   }
 

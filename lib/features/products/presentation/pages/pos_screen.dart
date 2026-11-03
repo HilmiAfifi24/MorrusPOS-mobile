@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/storage_service.dart';
+import '../../../../core/constants/capability_codes.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
+import '../../../auth/domain/access_policy.dart';
 import '../../../cashier_session/presentation/bloc/cashier_session_bloc.dart';
 import '../../../cashier_session/presentation/bloc/cashier_session_state.dart';
 import '../../../cashier_session/presentation/pages/cashier_session_screen.dart';
@@ -17,6 +19,8 @@ import '../../../checkout/presentation/bloc/cart_state.dart';
 import '../../../checkout/presentation/pages/checkout_screen.dart';
 import '../../../checkout/presentation/pages/transaction_history_screen.dart';
 import '../../../checkout/presentation/pages/settings_screen.dart';
+import '../../../capabilities/presentation/bloc/capability_bloc.dart';
+import '../../../capabilities/presentation/widgets/capability_gate.dart';
 
 class PosScreen extends StatefulWidget {
   final StorageService storageService;
@@ -243,7 +247,15 @@ class _PosScreenState extends State<PosScreen> {
                                   Navigator.pop(context);
                                   Navigator.push(
                                     context,
-                                    MaterialPageRoute(builder: (context) => const CheckoutScreen()),
+                                    MaterialPageRoute(
+                                      builder: (context) => const CapabilityGate(
+                                        requiredCapabilities: [
+                                          CapabilityCodes.salesPos,
+                                          CapabilityCodes.catalogProducts,
+                                        ],
+                                        child: CheckoutScreen(),
+                                      ),
+                                    ),
                                   );
                                 },
                                 child: const Text('Lanjut Pembayaran', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -304,6 +316,14 @@ class _PosScreenState extends State<PosScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final authState = context.watch<AuthBloc>().state;
+    final capabilityState = context.watch<CapabilityBloc>().state;
+    final user = authState is Authenticated ? authState.user : null;
+    final canViewTransactions = user != null && canReadTransactions(user) &&
+        capabilityState is CapabilityLoaded &&
+        capabilityState.has(CapabilityCodes.salesTransactions);
+    final canUsePos = user != null && canCreateTransactions(user) &&
+        capabilityState is CapabilityLoaded &&
+        capabilityState.has(CapabilityCodes.salesPos);
     String name = 'Kasir';
     String role = 'Kasir';
     if (authState is Authenticated) {
@@ -322,34 +342,51 @@ class _PosScreenState extends State<PosScreen> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.settings_outlined),
-          onPressed: () {
-            Navigator.push(
+          onPressed: () async {
+            await Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => SettingsScreen(storageService: widget.storageService),
               ),
             );
+            if (context.mounted) {
+              context.read<CapabilityBloc>().add(const CapabilitiesStale());
+            }
           },
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const TransactionHistoryScreen()),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.point_of_sale_outlined),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const CashierSessionScreen()),
-              );
-            },
-          ),
+          if (canViewTransactions)
+            IconButton(
+              tooltip: 'Riwayat transaksi',
+              icon: const Icon(Icons.history),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CapabilityGate(
+                      requiredCapabilities: [CapabilityCodes.salesTransactions],
+                      child: TransactionHistoryScreen(),
+                    ),
+                  ),
+                );
+              },
+            ),
+          if (canUsePos)
+            IconButton(
+              tooltip: 'Sesi kasir',
+              icon: const Icon(Icons.point_of_sale_outlined),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CapabilityGate(
+                      requiredCapabilities: [CapabilityCodes.salesPos],
+                      child: CashierSessionScreen(),
+                    ),
+                  ),
+                );
+              },
+            ),
         ],
       ),
       body: BlocBuilder<CashierSessionBloc, CashierSessionState>(
@@ -378,7 +415,12 @@ class _PosScreenState extends State<PosScreen> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const CashierSessionScreen()),
+                          MaterialPageRoute(
+                            builder: (context) => const CapabilityGate(
+                              requiredCapabilities: [CapabilityCodes.salesPos],
+                              child: CashierSessionScreen(),
+                            ),
+                          ),
                         );
                       },
                       style: ElevatedButton.styleFrom(minimumSize: const Size(200, 52)),

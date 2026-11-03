@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/utils/storage_service.dart';
+import '../../../capabilities/presentation/pages/capability_home_screen.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
+import 'login_screen.dart';
 
 class OutletSelectScreen extends StatefulWidget {
-  const OutletSelectScreen({super.key});
+  final StorageService storageService;
+
+  const OutletSelectScreen({super.key, required this.storageService});
 
   @override
   State<OutletSelectScreen> createState() => _OutletSelectScreenState();
@@ -49,7 +54,25 @@ class _OutletSelectScreenState extends State<OutletSelectScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is Authenticated && state.selectedOutletId?.isNotEmpty == true) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CapabilityHomeScreen(storageService: widget.storageService),
+            ),
+          );
+        } else if (state is Unauthenticated) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => LoginScreen(storageService: widget.storageService),
+            ),
+          );
+        }
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('Pilih Outlet Kerja'),
         actions: [
@@ -83,6 +106,7 @@ class _OutletSelectScreenState extends State<OutletSelectScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

@@ -6,7 +6,7 @@ import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
 import 'login_screen.dart';
 import 'outlet_select_screen.dart';
-import '../../../products/presentation/pages/pos_screen.dart';
+import '../../../capabilities/presentation/pages/capability_home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   final StorageService storageService;
@@ -41,14 +41,14 @@ class _SplashScreenState extends State<SplashScreen> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => const OutletSelectScreen(),
+                  builder: (context) => OutletSelectScreen(storageService: widget.storageService),
               ),
             );
           } else {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => PosScreen(storageService: widget.storageService),
+                builder: (context) => CapabilityHomeScreen(storageService: widget.storageService),
               ),
             );
           }

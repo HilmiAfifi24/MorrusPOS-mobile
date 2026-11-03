@@ -8,4 +8,5 @@ class ApiEndpoints {
   static const String products = '/api/products';
   static const String transactions = '/api/transactions';
   static const String checkout = '/api/transactions/checkout';
+  static const String effectiveCapabilities = '/api/capabilities/effective';
 }
