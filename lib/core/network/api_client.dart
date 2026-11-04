@@ -10,7 +10,7 @@ class ApiClient {
 
   void Function(String capabilityCode)? onCapabilityDisabled;
 
-  Map<String, String> _headers() {
+  Map<String, String> _headers([Map<String, String>? extra]) {
     final Map<String, String> headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
@@ -19,6 +19,7 @@ class ApiClient {
     if (token != null) {
       headers['Authorization'] = 'Bearer $token';
     }
+    if (extra != null) headers.addAll(extra);
     return headers;
   }
 
@@ -37,16 +38,25 @@ class ApiClient {
     return _inspect(await _client.get(uri, headers: _headers()));
   }
 
-  Future<http.Response> post(String endpoint, {Object? body}) async {
+  Future<http.Response> post(
+    String endpoint, {
+    Object? body,
+    Map<String, String>? headers,
+  }) async {
     final uri = Uri.parse('${_storage.baseUrl}$endpoint');
     return _inspect(
       await _client.post(
         uri,
-        headers: _headers(),
+        headers: _headers(headers),
         body: body != null ? jsonEncode(body) : null,
       ),
     );
   }
+
+  Future<bool> savePendingCheckout(Map<String, dynamic> payload) =>
+      _storage.savePendingCheckout(payload);
+  Future<bool> clearPendingCheckout() => _storage.clearPendingCheckout();
+  Map<String, dynamic>? getPendingCheckout() => _storage.getPendingCheckout();
 
   Future<http.Response> put(String endpoint, {Object? body}) async {
     final uri = Uri.parse('${_storage.baseUrl}$endpoint');

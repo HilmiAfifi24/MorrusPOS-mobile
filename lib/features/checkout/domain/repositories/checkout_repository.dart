@@ -1,5 +1,7 @@
 abstract class CheckoutRepository {
   Future<Map<String, dynamic>> checkout({
+    required String requestId,
+    required String paymentId,
     required String outletId,
     required String cashierSessionId,
     required double subtotal,
@@ -19,4 +21,6 @@ abstract class CheckoutRepository {
   Future<List<Map<String, dynamic>>> getRecentTransactions(String outletId);
   Future<Map<String, dynamic>> getTransactionById(String id);
   Future<void> voidTransaction(String id, String reason);
+  Map<String, dynamic>? getPendingCheckout();
+  Future<Map<String, dynamic>> retryPendingCheckout();
 }

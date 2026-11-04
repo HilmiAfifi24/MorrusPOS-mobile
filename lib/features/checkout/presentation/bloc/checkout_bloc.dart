@@ -8,17 +8,37 @@ export 'checkout_state.dart';
 
 class CheckoutBloc extends Bloc<CheckoutEvent, CheckoutState> {
   final CheckoutRepository repository;
+  bool _checkoutInFlight = false;
 
   CheckoutBloc({required this.repository}) : super(CheckoutInitial()) {
     on<SubmitCheckout>(_onSubmitCheckout);
+    on<RetryPendingCheckout>(_onRetryPendingCheckout);
     on<LoadHistory>(_onLoadHistory);
     on<VoidTransactionEvent>(_onVoidTransaction);
+  }
+
+  Future<void> _onRetryPendingCheckout(
+    RetryPendingCheckout event,
+    Emitter<CheckoutState> emit,
+  ) async {
+    if (_checkoutInFlight) return;
+    _checkoutInFlight = true;
+    emit(CheckoutLoading());
+    try {
+      emit(CheckoutSuccess(await repository.retryPendingCheckout()));
+    } catch (e) {
+      emit(CheckoutFailure(e.toString().replaceAll('ServerFailure: ', '')));
+    } finally {
+      _checkoutInFlight = false;
+    }
   }
 
   Future<void> _onSubmitCheckout(
     SubmitCheckout event,
     Emitter<CheckoutState> emit,
   ) async {
+    if (_checkoutInFlight) return;
+    _checkoutInFlight = true;
     emit(CheckoutLoading());
     try {
       for (final item in event.items) {
@@ -88,6 +108,8 @@ class CheckoutBloc extends Bloc<CheckoutEvent, CheckoutState> {
       ];
 
       final result = await repository.checkout(
+        requestId: event.requestId,
+        paymentId: event.paymentId,
         outletId: event.outletId,
         cashierSessionId: event.cashierSessionId,
         subtotal: subtotal,
@@ -110,6 +132,8 @@ class CheckoutBloc extends Bloc<CheckoutEvent, CheckoutState> {
               .replaceAll('ServerFailure: ', ''),
         ),
       );
+    } finally {
+      _checkoutInFlight = false;
     }
   }
 

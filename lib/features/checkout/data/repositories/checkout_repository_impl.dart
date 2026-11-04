@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_error.dart';
@@ -11,27 +10,10 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
 
   CheckoutRepositoryImpl({required this.apiClient});
 
-  String _generateUuid() {
-    final random = Random.secure();
-    final values = List<int>.generate(16, (i) => random.nextInt(256));
-
-    // Set version to 4 (random)
-    values[6] = (values[6] & 0x0f) | 0x40;
-    // Set variant to 10xx
-    values[8] = (values[8] & 0x3f) | 0x80;
-
-    final buffer = StringBuffer();
-    for (var i = 0; i < 16; i++) {
-      if (i == 4 || i == 6 || i == 8 || i == 10) {
-        buffer.write('-');
-      }
-      buffer.write(values[i].toRadixString(16).padLeft(2, '0'));
-    }
-    return buffer.toString();
-  }
-
   @override
   Future<Map<String, dynamic>> checkout({
+    required String requestId,
+    required String paymentId,
     required String outletId,
     required String cashierSessionId,
     required double subtotal,
@@ -44,9 +26,8 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
     String? appliedPromoCode,
   }) async {
     try {
-      final transactionId = _generateUuid();
       final body = {
-        'id': transactionId,
+        'id': requestId,
         'outletId': outletId,
         'cashierSessionId': cashierSessionId,
         'channel': 'pos',
@@ -55,14 +36,20 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
         'taxTotal': taxTotal,
         'grandTotal': grandTotal,
         'items': items,
-        'payments': payments,
+        'payments': payments.map((payment) => {...payment, 'id': paymentId}).toList(),
         'voucherCode': voucherCode,
         'appliedPromoCode': appliedPromoCode,
       };
 
-      final response = await apiClient.post(ApiEndpoints.checkout, body: body);
+      await apiClient.savePendingCheckout(body);
+      final response = await apiClient.post(
+        ApiEndpoints.checkout,
+        body: body,
+        headers: {'Idempotency-Key': requestId},
+      );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
+        await apiClient.clearPendingCheckout();
         return jsonDecode(response.body) as Map<String, dynamic>;
       } else {
         throw failureFromResponse(response, 'Gagal memproses checkout.');
@@ -99,6 +86,27 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
       if (e is Failure) rethrow;
       throw ServerFailure('Gagal memuat pricing checkout: koneksi bermasalah.');
     }
+  }
+
+  @override
+  Map<String, dynamic>? getPendingCheckout() => apiClient.getPendingCheckout();
+
+  @override
+  Future<Map<String, dynamic>> retryPendingCheckout() async {
+    final body = apiClient.getPendingCheckout();
+    if (body == null || body['id'] == null) {
+      throw const ServerFailure('Tidak ada checkout tertunda.');
+    }
+    final response = await apiClient.post(
+      ApiEndpoints.checkout,
+      body: body,
+      headers: {'Idempotency-Key': body['id'].toString()},
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      await apiClient.clearPendingCheckout();
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    throw failureFromResponse(response, 'Gagal mengulang checkout tertunda.');
   }
 
   @override

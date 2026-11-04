@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/currency_formatter.dart';
@@ -7,6 +9,7 @@ import '../bloc/cart_bloc.dart';
 import '../bloc/checkout_bloc.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../cashier_session/presentation/bloc/cashier_session_bloc.dart';
+import '../../domain/repositories/checkout_repository.dart';
 import 'success_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -25,11 +28,36 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _isPreviewLoading = false;
   String? _previewError;
   Map<String, dynamic>? _preview;
+  late String _requestId;
+  late String _paymentId;
+  String? _attemptFingerprint;
 
   @override
   void initState() {
     super.initState();
+    _requestId = _newUuid();
+    _paymentId = _newUuid();
     _refreshPreview();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _offerPendingCheckout());
+  }
+
+  Future<void> _offerPendingCheckout() async {
+    if (!mounted || context.read<CheckoutRepository>().getPendingCheckout() == null) return;
+    final retry = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Checkout tertunda'),
+        content: const Text('Ada checkout yang belum mendapat jawaban. Retry menggunakan request ID yang sama agar transaksi tidak dobel.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Nanti')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Retry')),
+        ],
+      ),
+    );
+    if (retry == true && mounted) {
+      context.read<CheckoutBloc>().add(const RetryPendingCheckout());
+    }
   }
 
   @override
@@ -125,6 +153,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   void _submit() {
+    final pending = context.read<CheckoutRepository>().getPendingCheckout();
+    if (pending != null && pending['id']?.toString() != _requestId) {
+      _offerPendingCheckout();
+      return;
+    }
     if (_formKey.currentState!.validate()) {
       final cartState = context.read<CartBloc>().state;
       final authState = context.read<AuthBloc>().state;
@@ -160,8 +193,34 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         return;
       }
 
+      final fingerprint = jsonEncode({
+        'items': cartState.items
+            .map((item) => {
+                  'productId': item.productId,
+                  'qty': item.qty,
+                  'unitPrice': item.unitPrice,
+                  'discountAmount': item.discountAmount,
+                  'batchAllocations': item.batchAllocations,
+                  'serialIds': item.serialIds,
+                })
+            .toList(),
+        'paymentMethod': _selectedPaymentMethod,
+        'paymentAmount': _selectedPaymentMethod == 'cash' ? grandTotal : amount,
+        'referenceNumber': _referenceController.text.trim(),
+        'voucherCode': _voucherController.text.trim(),
+        'outletId': outletId,
+        'cashierSessionId': sessionId,
+      });
+      if (_attemptFingerprint != null && _attemptFingerprint != fingerprint) {
+        _requestId = _newUuid();
+        _paymentId = _newUuid();
+      }
+      _attemptFingerprint = fingerprint;
+
       context.read<CheckoutBloc>().add(
         SubmitCheckout(
+          requestId: _requestId,
+          paymentId: _paymentId,
           items: cartState.items,
           paymentMethod: _selectedPaymentMethod,
           paymentAmount: _selectedPaymentMethod == 'cash' ? grandTotal : amount,
@@ -177,6 +236,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ),
       );
     }
+  }
+
+  static String _newUuid() {
+    final random = Random.secure();
+    final values = List<int>.generate(16, (_) => random.nextInt(256));
+    values[6] = (values[6] & 0x0f) | 0x40;
+    values[8] = (values[8] & 0x3f) | 0x80;
+    final buffer = StringBuffer();
+    for (var i = 0; i < values.length; i++) {
+      if (i == 4 || i == 6 || i == 8 || i == 10) buffer.write('-');
+      buffer.write(values[i].toRadixString(16).padLeft(2, '0'));
+    }
+    return buffer.toString();
   }
 
   @override

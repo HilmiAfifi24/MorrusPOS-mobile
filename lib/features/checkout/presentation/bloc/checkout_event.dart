@@ -9,6 +9,8 @@ abstract class CheckoutEvent extends Equatable {
 }
 
 class SubmitCheckout extends CheckoutEvent {
+  final String requestId;
+  final String paymentId;
   final List<CartItemEntity> items;
   final String paymentMethod;
   final double paymentAmount;
@@ -18,6 +20,8 @@ class SubmitCheckout extends CheckoutEvent {
   final String cashierSessionId;
 
   const SubmitCheckout({
+    required this.requestId,
+    required this.paymentId,
     required this.items,
     required this.paymentMethod,
     required this.paymentAmount,
@@ -29,6 +33,8 @@ class SubmitCheckout extends CheckoutEvent {
 
   @override
   List<Object?> get props => [
+    requestId,
+    paymentId,
     items,
     paymentMethod,
     paymentAmount,
@@ -46,6 +52,10 @@ class LoadHistory extends CheckoutEvent {
 
   @override
   List<Object?> get props => [outletId];
+}
+
+class RetryPendingCheckout extends CheckoutEvent {
+  const RetryPendingCheckout();
 }
 
 class VoidTransactionEvent extends CheckoutEvent {

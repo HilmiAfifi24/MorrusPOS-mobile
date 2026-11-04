@@ -18,8 +18,19 @@ Failure failureFromResponse(http.Response response, String fallbackMessage) {
         'TRACKING_ALLOCATION_MISMATCH':
             'Jumlah batch atau serial tidak cocok dengan qty.',
       }[code];
+      final idempotencyMessage = <String, String>{
+        'IDEMPOTENCY_KEY_REQUIRED': 'Request ID checkout tidak tersedia.',
+        'IDEMPOTENCY_KEY_INVALID': 'Request ID checkout tidak valid.',
+        'IDEMPOTENCY_KEY_REUSED': 'Request ID sudah dipakai untuk data checkout yang berbeda.',
+        'IDEMPOTENCY_IN_PROGRESS': 'Checkout yang sama masih diproses. Coba lagi sebentar.',
+        'PAYMENT_REFERENCE_DUPLICATE': 'Nomor referensi pembayaran sudah digunakan.',
+      }[code];
       final message =
-          payload['message']?.toString() ?? trackingMessage ?? fallbackMessage;
+          payload['message']?.toString() ??
+          payload['error']?.toString() ??
+          trackingMessage ??
+          idempotencyMessage ??
+          fallbackMessage;
       if (response.statusCode == 403 &&
           payload['code'] == 'CAPABILITY_DISABLED') {
         return CapabilityDisabledFailure(
@@ -29,6 +40,9 @@ Failure failureFromResponse(http.Response response, String fallbackMessage) {
       }
       if (trackingMessage != null && code != null) {
         return TrackingFailure(code, message);
+      }
+      if (idempotencyMessage != null && code != null) {
+        return IdempotencyFailure(code, message);
       }
       return ServerFailure(message);
     }

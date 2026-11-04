@@ -24,6 +24,15 @@ class TrackingFailure extends Failure {
   List<Object> get props => [code, message];
 }
 
+class IdempotencyFailure extends Failure {
+  final String code;
+
+  const IdempotencyFailure(this.code, super.message);
+
+  @override
+  List<Object> get props => [code, message];
+}
+
 class CacheFailure extends Failure {
   const CacheFailure() : super('Gagal memuat data lokal.');
 }

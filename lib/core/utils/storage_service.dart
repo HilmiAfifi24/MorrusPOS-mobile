@@ -11,6 +11,7 @@ class StorageService {
   static const String _keyRefreshToken = 'refresh_token';
   static const String _keyUser = 'user_profile';
   static const String _keySelectedOutletId = 'selected_outlet_id';
+  static const String _keyPendingCheckout = 'pending_checkout';
 
   // Default base URL is https://10.0.2.2:7100 for Android emulator (HTTPS backend)
   // If iOS/Web, users can use localhost or change it in settings
@@ -38,6 +39,7 @@ class StorageService {
     await _prefs.remove(_keyRefreshToken);
     await _prefs.remove(_keyUser);
     await _prefs.remove(_keySelectedOutletId);
+    await _prefs.remove(_keyPendingCheckout);
     return true;
   }
 
@@ -64,4 +66,20 @@ class StorageService {
   Future<bool> clearSelectedOutletId() async {
     return await _prefs.remove(_keySelectedOutletId);
   }
+
+  Future<bool> savePendingCheckout(Map<String, dynamic> payload) async {
+    return _prefs.setString(_keyPendingCheckout, jsonEncode(payload));
+  }
+
+  Map<String, dynamic>? getPendingCheckout() {
+    final value = _prefs.getString(_keyPendingCheckout);
+    if (value == null) return null;
+    try {
+      return jsonDecode(value) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<bool> clearPendingCheckout() => _prefs.remove(_keyPendingCheckout);
 }
