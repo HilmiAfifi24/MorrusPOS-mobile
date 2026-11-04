@@ -22,10 +22,15 @@ class ApiClient {
     return headers;
   }
 
-  Future<http.Response> get(String endpoint, {Map<String, String>? queryParams}) async {
+  Future<http.Response> get(
+    String endpoint, {
+    Map<String, String>? queryParams,
+  }) async {
     String queryString = '';
     if (queryParams != null && queryParams.isNotEmpty) {
-      final parts = queryParams.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}');
+      final parts = queryParams.entries.map(
+        (e) => '${e.key}=${Uri.encodeComponent(e.value)}',
+      );
       queryString = '?${parts.join('&')}';
     }
     final uri = Uri.parse('${_storage.baseUrl}$endpoint$queryString');
@@ -34,20 +39,24 @@ class ApiClient {
 
   Future<http.Response> post(String endpoint, {Object? body}) async {
     final uri = Uri.parse('${_storage.baseUrl}$endpoint');
-    return _inspect(await _client.post(
-      uri,
-      headers: _headers(),
-      body: body != null ? jsonEncode(body) : null,
-    ));
+    return _inspect(
+      await _client.post(
+        uri,
+        headers: _headers(),
+        body: body != null ? jsonEncode(body) : null,
+      ),
+    );
   }
 
   Future<http.Response> put(String endpoint, {Object? body}) async {
     final uri = Uri.parse('${_storage.baseUrl}$endpoint');
-    return _inspect(await _client.put(
-      uri,
-      headers: _headers(),
-      body: body != null ? jsonEncode(body) : null,
-    ));
+    return _inspect(
+      await _client.put(
+        uri,
+        headers: _headers(),
+        body: body != null ? jsonEncode(body) : null,
+      ),
+    );
   }
 
   Future<http.Response> delete(String endpoint) async {
@@ -59,7 +68,8 @@ class ApiClient {
     if (response.statusCode == 403) {
       try {
         final payload = jsonDecode(response.body);
-        if (payload is Map<String, dynamic> && payload['code'] == 'CAPABILITY_DISABLED') {
+        if (payload is Map<String, dynamic> &&
+            payload['code'] == 'CAPABILITY_DISABLED') {
           onCapabilityDisabled?.call(payload['capability']?.toString() ?? '');
         }
       } catch (_) {}

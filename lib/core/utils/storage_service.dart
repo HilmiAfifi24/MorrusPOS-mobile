@@ -14,7 +14,8 @@ class StorageService {
 
   // Default base URL is https://10.0.2.2:7100 for Android emulator (HTTPS backend)
   // If iOS/Web, users can use localhost or change it in settings
-  String get baseUrl => _prefs.getString(_keyBaseUrl) ?? 'https://10.0.2.2:7100';
+  String get baseUrl =>
+      _prefs.getString(_keyBaseUrl) ?? 'https://10.0.2.2:7100';
 
   Future<bool> setBaseUrl(String url) async {
     return await _prefs.setString(_keyBaseUrl, url);

@@ -38,7 +38,9 @@ class ProductsState extends Equatable {
       filteredProducts: filteredProducts ?? this.filteredProducts,
       categories: categories ?? this.categories,
       categoryIdToName: categoryIdToName ?? this.categoryIdToName,
-      selectedCategoryId: clearSelectedCategory ? null : (selectedCategoryId ?? this.selectedCategoryId),
+      selectedCategoryId: clearSelectedCategory
+          ? null
+          : (selectedCategoryId ?? this.selectedCategoryId),
       searchQuery: searchQuery ?? this.searchQuery,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
@@ -47,13 +49,13 @@ class ProductsState extends Equatable {
 
   @override
   List<Object?> get props => [
-        allProducts,
-        filteredProducts,
-        categories,
-        categoryIdToName,
-        selectedCategoryId,
-        searchQuery,
-        isLoading,
-        errorMessage,
-      ];
+    allProducts,
+    filteredProducts,
+    categories,
+    categoryIdToName,
+    selectedCategoryId,
+    searchQuery,
+    isLoading,
+    errorMessage,
+  ];
 }

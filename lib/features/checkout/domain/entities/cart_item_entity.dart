@@ -8,6 +8,9 @@ class CartItemEntity extends Equatable {
   final double qty;
   final double discountAmount;
   final double availableStock;
+  final String trackingMode;
+  final Map<String, double> batchAllocations;
+  final List<String> serialIds;
 
   const CartItemEntity({
     required this.productId,
@@ -17,6 +20,9 @@ class CartItemEntity extends Equatable {
     required this.qty,
     required this.discountAmount,
     required this.availableStock,
+    this.trackingMode = 'quantity',
+    this.batchAllocations = const {},
+    this.serialIds = const [],
   });
 
   double get lineTotal => (unitPrice - discountAmount) * qty;
@@ -29,6 +35,9 @@ class CartItemEntity extends Equatable {
     double? qty,
     double? discountAmount,
     double? availableStock,
+    String? trackingMode,
+    Map<String, double>? batchAllocations,
+    List<String>? serialIds,
   }) {
     return CartItemEntity(
       productId: productId ?? this.productId,
@@ -38,17 +47,23 @@ class CartItemEntity extends Equatable {
       qty: qty ?? this.qty,
       discountAmount: discountAmount ?? this.discountAmount,
       availableStock: availableStock ?? this.availableStock,
+      trackingMode: trackingMode ?? this.trackingMode,
+      batchAllocations: batchAllocations ?? this.batchAllocations,
+      serialIds: serialIds ?? this.serialIds,
     );
   }
 
   @override
   List<Object?> get props => [
-        productId,
-        productName,
-        sku,
-        unitPrice,
-        qty,
-        discountAmount,
-        availableStock,
-      ];
+    productId,
+    productName,
+    sku,
+    unitPrice,
+    qty,
+    discountAmount,
+    availableStock,
+    trackingMode,
+    batchAllocations,
+    serialIds,
+  ];
 }

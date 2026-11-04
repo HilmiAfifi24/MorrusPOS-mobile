@@ -10,7 +10,8 @@ class RealtimeService {
   RealtimeService({required this.storageService});
 
   // Callback when stock updates are received
-  void Function(String outletId, List<Map<String, dynamic>> updates)? onStockUpdate;
+  void Function(String outletId, List<Map<String, dynamic>> updates)?
+  onStockUpdate;
 
   // Callback when SignalR automatically reconnects and re-joins the outlet group
   void Function()? onReconnected;
@@ -24,14 +25,14 @@ class RealtimeService {
     final token = storageService.token ?? '';
     final baseUrl = storageService.baseUrl;
 
-    debugPrint('Connecting to SignalR Hub at $baseUrl/hub/notifications with outlet: $outletId');
+    debugPrint(
+      'Connecting to SignalR Hub at $baseUrl/hub/notifications with outlet: $outletId',
+    );
 
     _hubConnection = HubConnectionBuilder()
         .withUrl(
           '$baseUrl/hub/notifications',
-          options: HttpConnectionOptions(
-            accessTokenFactory: () async => token,
-          ),
+          options: HttpConnectionOptions(accessTokenFactory: () async => token),
         )
         .withAutomaticReconnect()
         .build();
@@ -71,8 +72,13 @@ class RealtimeService {
       debugPrint('SignalR: Reconnected. ConnectionId: $connectionId');
       if (_currentOutletId != null) {
         try {
-          await _hubConnection!.invoke('JoinOutletGroup', args: [_currentOutletId!]);
-          debugPrint('SignalR: Re-joined group Outlet_$_currentOutletId after reconnect');
+          await _hubConnection!.invoke(
+            'JoinOutletGroup',
+            args: [_currentOutletId!],
+          );
+          debugPrint(
+            'SignalR: Re-joined group Outlet_$_currentOutletId after reconnect',
+          );
           onReconnected?.call();
         } catch (e) {
           debugPrint('SignalR: Error rejoining group after reconnect: $e');

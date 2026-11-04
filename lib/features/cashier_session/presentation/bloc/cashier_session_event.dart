@@ -20,7 +20,10 @@ class OpenSessionSubmitted extends CashierSessionEvent {
   final String outletId;
   final double openingCash;
 
-  const OpenSessionSubmitted({required this.outletId, required this.openingCash});
+  const OpenSessionSubmitted({
+    required this.outletId,
+    required this.openingCash,
+  });
 
   @override
   List<Object?> get props => [outletId, openingCash];
@@ -30,7 +33,10 @@ class CloseSessionSubmitted extends CashierSessionEvent {
   final String sessionId;
   final double actualCash;
 
-  const CloseSessionSubmitted({required this.sessionId, required this.actualCash});
+  const CloseSessionSubmitted({
+    required this.sessionId,
+    required this.actualCash,
+  });
 
   @override
   List<Object?> get props => [sessionId, actualCash];

@@ -11,6 +11,7 @@ class ProductModel extends ProductEntity {
     super.categoryId,
     super.categoryName,
     super.imageUrl,
+    super.trackingMode,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -24,6 +25,7 @@ class ProductModel extends ProductEntity {
       categoryId: json['categoryId'],
       categoryName: json['categoryName'],
       imageUrl: json['imageUrl'],
+      trackingMode: ProductEntity.parseTrackingMode(json['trackingMode']),
     );
   }
 }

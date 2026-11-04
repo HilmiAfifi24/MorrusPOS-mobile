@@ -29,14 +29,14 @@ class SubmitCheckout extends CheckoutEvent {
 
   @override
   List<Object?> get props => [
-        items,
-        paymentMethod,
-        paymentAmount,
-        referenceNumber,
-        voucherCode,
-        outletId,
-        cashierSessionId,
-      ];
+    items,
+    paymentMethod,
+    paymentAmount,
+    referenceNumber,
+    voucherCode,
+    outletId,
+    cashierSessionId,
+  ];
 }
 
 class LoadHistory extends CheckoutEvent {

@@ -41,7 +41,10 @@ class _OutletSelectScreenState extends State<OutletSelectScreen> {
       });
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString().replaceAll('Exception: ', '').replaceAll('ServerFailure: ', '');
+        _errorMessage = e
+            .toString()
+            .replaceAll('Exception: ', '')
+            .replaceAll('ServerFailure: ', '');
         _isLoading = false;
       });
     }
@@ -56,57 +59,58 @@ class _OutletSelectScreenState extends State<OutletSelectScreen> {
     final theme = Theme.of(context);
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
-        if (state is Authenticated && state.selectedOutletId?.isNotEmpty == true) {
+        if (state is Authenticated &&
+            state.selectedOutletId?.isNotEmpty == true) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => CapabilityHomeScreen(storageService: widget.storageService),
+              builder: (_) =>
+                  CapabilityHomeScreen(storageService: widget.storageService),
             ),
           );
         } else if (state is Unauthenticated) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => LoginScreen(storageService: widget.storageService),
+              builder: (_) =>
+                  LoginScreen(storageService: widget.storageService),
             ),
           );
         }
       },
       child: Scaffold(
-      appBar: AppBar(
-        title: const Text('Pilih Outlet Kerja'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              context.read<AuthBloc>().add(LogoutRequested());
-            },
-          )
-        ],
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Selamat Datang',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Akun Anda memiliki akses multi-outlet. Silakan pilih salah satu outlet untuk mulai bertransaksi.',
-                style: TextStyle(fontSize: 14, color: Colors.white54),
-              ),
-              const SizedBox(height: 32),
-              Expanded(
-                child: _buildContent(theme),
-              ),
-            ],
+        appBar: AppBar(
+          title: const Text('Pilih Outlet Kerja'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () {
+                context.read<AuthBloc>().add(LogoutRequested());
+              },
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Selamat Datang',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Akun Anda memiliki akses multi-outlet. Silakan pilih salah satu outlet untuk mulai bertransaksi.',
+                  style: TextStyle(fontSize: 14, color: Colors.white54),
+                ),
+                const SizedBox(height: 32),
+                Expanded(child: _buildContent(theme)),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -121,7 +125,11 @@ class _OutletSelectScreenState extends State<OutletSelectScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 60, color: Colors.redAccent.shade200),
+            Icon(
+              Icons.error_outline,
+              size: 60,
+              color: Colors.redAccent.shade200,
+            ),
             const SizedBox(height: 16),
             Text(
               _errorMessage!,
@@ -141,9 +149,7 @@ class _OutletSelectScreenState extends State<OutletSelectScreen> {
     }
 
     if (_outlets.isEmpty) {
-      return const Center(
-        child: Text('Tidak ada outlet aktif yang tersedia.'),
-      );
+      return const Center(child: Text('Tidak ada outlet aktif yang tersedia.'));
     }
 
     return ListView.separated(
@@ -170,7 +176,7 @@ class _OutletSelectScreenState extends State<OutletSelectScreen> {
                   color: Colors.black.withOpacity(0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
-                )
+                ),
               ],
             ),
             child: Row(
@@ -181,7 +187,11 @@ class _OutletSelectScreenState extends State<OutletSelectScreen> {
                     color: theme.colorScheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(Icons.storefront, color: theme.colorScheme.primary, size: 28),
+                  child: Icon(
+                    Icons.storefront,
+                    color: theme.colorScheme.primary,
+                    size: 28,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -190,12 +200,18 @@ class _OutletSelectScreenState extends State<OutletSelectScreen> {
                     children: [
                       Text(
                         name,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Kode: $code  •  Tlp: $phone',
-                        style: const TextStyle(fontSize: 12, color: Colors.white38),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white38,
+                        ),
                       ),
                     ],
                   ),

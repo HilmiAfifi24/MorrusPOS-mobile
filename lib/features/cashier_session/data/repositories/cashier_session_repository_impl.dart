@@ -28,7 +28,10 @@ class CashierSessionRepositoryImpl implements CashierSessionRepository {
         if (data == null) return null;
         return CashierSessionModel.fromJson(data);
       } else {
-        throw failureFromResponse(response, 'Gagal memeriksa sesi kasir aktif.');
+        throw failureFromResponse(
+          response,
+          'Gagal memeriksa sesi kasir aktif.',
+        );
       }
     } catch (e) {
       if (e is Failure) rethrow;
@@ -37,14 +40,14 @@ class CashierSessionRepositoryImpl implements CashierSessionRepository {
   }
 
   @override
-  Future<CashierSessionEntity> openSession(String outletId, double openingCash) async {
+  Future<CashierSessionEntity> openSession(
+    String outletId,
+    double openingCash,
+  ) async {
     try {
       final response = await apiClient.post(
         ApiEndpoints.openSession,
-        body: {
-          'openingCash': openingCash,
-          'outletId': outletId,
-        },
+        body: {'openingCash': openingCash, 'outletId': outletId},
       );
 
       if (response.statusCode == 200) {
@@ -60,13 +63,14 @@ class CashierSessionRepositoryImpl implements CashierSessionRepository {
   }
 
   @override
-  Future<CashierSessionEntity> closeSession(String sessionId, double actualCash) async {
+  Future<CashierSessionEntity> closeSession(
+    String sessionId,
+    double actualCash,
+  ) async {
     try {
       final response = await apiClient.post(
         '${ApiEndpoints.closeSession}/$sessionId',
-        body: {
-          'actualCash': actualCash,
-        },
+        body: {'actualCash': actualCash},
       );
 
       if (response.statusCode == 200) {

@@ -33,22 +33,26 @@ class _SplashScreenState extends State<SplashScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => LoginScreen(storageService: widget.storageService),
+              builder: (context) =>
+                  LoginScreen(storageService: widget.storageService),
             ),
           );
         } else if (state is Authenticated) {
-          if (state.selectedOutletId == null || state.selectedOutletId!.isEmpty) {
+          if (state.selectedOutletId == null ||
+              state.selectedOutletId!.isEmpty) {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                  builder: (context) => OutletSelectScreen(storageService: widget.storageService),
+                builder: (context) =>
+                    OutletSelectScreen(storageService: widget.storageService),
               ),
             );
           } else {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => CapabilityHomeScreen(storageService: widget.storageService),
+                builder: (context) =>
+                    CapabilityHomeScreen(storageService: widget.storageService),
               ),
             );
           }
@@ -58,7 +62,10 @@ class _SplashScreenState extends State<SplashScreen> {
         body: Container(
           decoration: BoxDecoration(
             gradient: RadialGradient(
-              colors: [theme.colorScheme.primary.withOpacity(0.2), theme.scaffoldBackgroundColor],
+              colors: [
+                theme.colorScheme.primary.withOpacity(0.2),
+                theme.scaffoldBackgroundColor,
+              ],
               radius: 1.2,
             ),
           ),
@@ -78,15 +85,23 @@ class _SplashScreenState extends State<SplashScreen> {
                         color: theme.colorScheme.primary.withOpacity(0.2),
                         blurRadius: 30,
                         spreadRadius: 5,
-                      )
+                      ),
                     ],
                   ),
-                  child: Icon(Icons.shopping_bag, size: 50, color: theme.colorScheme.primary),
+                  child: Icon(
+                    Icons.shopping_bag,
+                    size: 50,
+                    color: theme.colorScheme.primary,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 const Text(
                   'MorrusPOS',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 1.0),
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.0,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 const Text(

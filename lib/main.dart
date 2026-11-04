@@ -35,7 +35,8 @@ class MyHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
     return super.createHttpClient(context)
-      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
   }
 }
 
@@ -44,7 +45,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
   final storageService = StorageService(prefs);
-  
+
   final httpClient = http.Client();
   final apiClient = ApiClient(httpClient, storageService);
 
@@ -58,34 +59,31 @@ void main() async {
     apiClient: apiClient,
   );
 
-  final productsRepository = ProductsRepositoryImpl(
-    apiClient: apiClient,
-  );
+  final productsRepository = ProductsRepositoryImpl(apiClient: apiClient);
 
-  final checkoutRepository = CheckoutRepositoryImpl(
-    apiClient: apiClient,
-  );
+  final checkoutRepository = CheckoutRepositoryImpl(apiClient: apiClient);
 
-  final realtimeService = RealtimeService(
-    storageService: storageService,
-  );
+  final realtimeService = RealtimeService(storageService: storageService);
 
   final dashboardRepository = DashboardRepository(apiClient: apiClient);
   final capabilityRepository = CapabilityRepositoryImpl(apiClient: apiClient);
   final capabilityBloc = CapabilityBloc(repository: capabilityRepository);
-  apiClient.onCapabilityDisabled = (_) => capabilityBloc.add(const CapabilitiesStale());
+  apiClient.onCapabilityDisabled = (_) =>
+      capabilityBloc.add(const CapabilitiesStale());
 
-  runApp(MorrusPOSApp(
-    storageService: storageService,
-    authRepository: authRepository,
-    cashierSessionRepository: cashierSessionRepository,
-    productsRepository: productsRepository,
-    checkoutRepository: checkoutRepository,
-    realtimeService: realtimeService,
-    dashboardRepository: dashboardRepository,
-    capabilityRepository: capabilityRepository,
-    capabilityBloc: capabilityBloc,
-  ));
+  runApp(
+    MorrusPOSApp(
+      storageService: storageService,
+      authRepository: authRepository,
+      cashierSessionRepository: cashierSessionRepository,
+      productsRepository: productsRepository,
+      checkoutRepository: checkoutRepository,
+      realtimeService: realtimeService,
+      dashboardRepository: dashboardRepository,
+      capabilityRepository: capabilityRepository,
+      capabilityBloc: capabilityBloc,
+    ),
+  );
 }
 
 class MorrusPOSApp extends StatelessWidget {
@@ -117,12 +115,18 @@ class MorrusPOSApp extends StatelessWidget {
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<AuthRepository>.value(value: authRepository),
-        RepositoryProvider<CashierSessionRepository>.value(value: cashierSessionRepository),
+        RepositoryProvider<CashierSessionRepository>.value(
+          value: cashierSessionRepository,
+        ),
         RepositoryProvider<ProductsRepository>.value(value: productsRepository),
         RepositoryProvider<CheckoutRepository>.value(value: checkoutRepository),
         RepositoryProvider<RealtimeService>.value(value: realtimeService),
-        RepositoryProvider<DashboardRepository>.value(value: dashboardRepository),
-        RepositoryProvider<CapabilityRepository>.value(value: capabilityRepository),
+        RepositoryProvider<DashboardRepository>.value(
+          value: dashboardRepository,
+        ),
+        RepositoryProvider<CapabilityRepository>.value(
+          value: capabilityRepository,
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -130,14 +134,13 @@ class MorrusPOSApp extends StatelessWidget {
             create: (context) => AuthBloc(authRepository: authRepository),
           ),
           BlocProvider<CashierSessionBloc>(
-            create: (context) => CashierSessionBloc(repository: cashierSessionRepository),
+            create: (context) =>
+                CashierSessionBloc(repository: cashierSessionRepository),
           ),
           BlocProvider<ProductsBloc>(
             create: (context) => ProductsBloc(repository: productsRepository),
           ),
-          BlocProvider<CartBloc>(
-            create: (context) => CartBloc(),
-          ),
+          BlocProvider<CartBloc>(create: (context) => CartBloc()),
           BlocProvider<CheckoutBloc>(
             create: (context) => CheckoutBloc(repository: checkoutRepository),
           ),

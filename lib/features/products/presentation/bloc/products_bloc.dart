@@ -18,15 +18,18 @@ class ProductsBloc extends Bloc<ProductsEvent, ProductsState> {
     on<ReloadProductsSilently>(_onReloadProductsSilently);
   }
 
-  Future<void> _onLoadProducts(LoadProducts event, Emitter<ProductsState> emit) async {
+  Future<void> _onLoadProducts(
+    LoadProducts event,
+    Emitter<ProductsState> emit,
+  ) async {
     emit(state.copyWith(isLoading: true));
     try {
       final products = await repository.getProducts(event.outletId);
-      
+
       // Extract unique categories
       final Set<String> categoryIds = {};
       final Map<String, String> categoryIdToName = {};
-      
+
       for (final p in products) {
         if (p.categoryId != null && p.categoryName != null) {
           categoryIds.add(p.categoryId!);
@@ -36,37 +39,66 @@ class ProductsBloc extends Bloc<ProductsEvent, ProductsState> {
 
       final categoriesList = categoryIds.toList();
 
-      emit(state.copyWith(
-        allProducts: products,
-        filteredProducts: _filter(products, state.searchQuery, state.selectedCategoryId),
-        categories: categoriesList,
-        categoryIdToName: categoryIdToName,
-        isLoading: false,
-      ));
+      emit(
+        state.copyWith(
+          allProducts: products,
+          filteredProducts: _filter(
+            products,
+            state.searchQuery,
+            state.selectedCategoryId,
+          ),
+          categories: categoriesList,
+          categoryIdToName: categoryIdToName,
+          isLoading: false,
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString().replaceAll('Exception: ', '').replaceAll('ServerFailure: ', ''),
-      ));
+      emit(
+        state.copyWith(
+          isLoading: false,
+          errorMessage: e
+              .toString()
+              .replaceAll('Exception: ', '')
+              .replaceAll('ServerFailure: ', ''),
+        ),
+      );
     }
   }
 
   void _onSearchProducts(SearchProducts event, Emitter<ProductsState> emit) {
-    emit(state.copyWith(
-      searchQuery: event.query,
-      filteredProducts: _filter(state.allProducts, event.query, state.selectedCategoryId),
-    ));
+    emit(
+      state.copyWith(
+        searchQuery: event.query,
+        filteredProducts: _filter(
+          state.allProducts,
+          event.query,
+          state.selectedCategoryId,
+        ),
+      ),
+    );
   }
 
-  void _onFilterCategorySelected(FilterCategorySelected event, Emitter<ProductsState> emit) {
-    emit(state.copyWith(
-      selectedCategoryId: event.categoryId,
-      clearSelectedCategory: event.categoryId == null,
-      filteredProducts: _filter(state.allProducts, state.searchQuery, event.categoryId),
-    ));
+  void _onFilterCategorySelected(
+    FilterCategorySelected event,
+    Emitter<ProductsState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        selectedCategoryId: event.categoryId,
+        clearSelectedCategory: event.categoryId == null,
+        filteredProducts: _filter(
+          state.allProducts,
+          state.searchQuery,
+          event.categoryId,
+        ),
+      ),
+    );
   }
 
-  void _onUpdateProductsStock(UpdateProductsStock event, Emitter<ProductsState> emit) {
+  void _onUpdateProductsStock(
+    UpdateProductsStock event,
+    Emitter<ProductsState> emit,
+  ) {
     final updatedProducts = state.allProducts.map((product) {
       final update = event.updates.firstWhere(
         (u) => u['productId'] == product.id,
@@ -78,19 +110,28 @@ class ProductsBloc extends Bloc<ProductsEvent, ProductsState> {
       return product;
     }).toList();
 
-    emit(state.copyWith(
-      allProducts: updatedProducts,
-      filteredProducts: _filter(updatedProducts, state.searchQuery, state.selectedCategoryId),
-    ));
+    emit(
+      state.copyWith(
+        allProducts: updatedProducts,
+        filteredProducts: _filter(
+          updatedProducts,
+          state.searchQuery,
+          state.selectedCategoryId,
+        ),
+      ),
+    );
   }
 
-  Future<void> _onReloadProductsSilently(ReloadProductsSilently event, Emitter<ProductsState> emit) async {
+  Future<void> _onReloadProductsSilently(
+    ReloadProductsSilently event,
+    Emitter<ProductsState> emit,
+  ) async {
     try {
       final products = await repository.getProducts(event.outletId);
-      
+
       final Set<String> categoryIds = {};
       final Map<String, String> categoryIdToName = {};
-      
+
       for (final p in products) {
         if (p.categoryId != null && p.categoryName != null) {
           categoryIds.add(p.categoryId!);
@@ -100,21 +141,33 @@ class ProductsBloc extends Bloc<ProductsEvent, ProductsState> {
 
       final categoriesList = categoryIds.toList();
 
-      emit(state.copyWith(
-        allProducts: products,
-        filteredProducts: _filter(products, state.searchQuery, state.selectedCategoryId),
-        categories: categoriesList,
-        categoryIdToName: categoryIdToName,
-      ));
+      emit(
+        state.copyWith(
+          allProducts: products,
+          filteredProducts: _filter(
+            products,
+            state.searchQuery,
+            state.selectedCategoryId,
+          ),
+          categories: categoriesList,
+          categoryIdToName: categoryIdToName,
+        ),
+      );
     } catch (_) {
       // Fail silently to not disrupt the user interface during real-time updates
     }
   }
 
-  List<ProductEntity> _filter(List<ProductEntity> products, String query, String? categoryId) {
+  List<ProductEntity> _filter(
+    List<ProductEntity> products,
+    String query,
+    String? categoryId,
+  ) {
     return products.where((product) {
-      final matchesCategory = categoryId == null || product.categoryId == categoryId;
-      final matchesSearch = query.isEmpty ||
+      final matchesCategory =
+          categoryId == null || product.categoryId == categoryId;
+      final matchesSearch =
+          query.isEmpty ||
           product.name.toLowerCase().contains(query.toLowerCase()) ||
           product.sku.toLowerCase().contains(query.toLowerCase()) ||
           (product.barcode ?? '').toLowerCase().contains(query.toLowerCase());

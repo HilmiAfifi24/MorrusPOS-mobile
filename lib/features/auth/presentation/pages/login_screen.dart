@@ -30,7 +30,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showServerConfigDialog() {
-    final controller = TextEditingController(text: widget.storageService.baseUrl);
+    final controller = TextEditingController(
+      text: widget.storageService.baseUrl,
+    );
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -64,7 +66,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 await widget.storageService.setBaseUrl(controller.text.trim());
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Server URL diperbarui ke: ${controller.text.trim()}')),
+                    SnackBar(
+                      content: Text(
+                        'Server URL diperbarui ke: ${controller.text.trim()}',
+                      ),
+                    ),
                   );
                   Navigator.pop(context);
                 }
@@ -80,10 +86,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _submit() {
     if (_formKey.currentState!.validate()) {
-      context.read<AuthBloc>().add(LoginSubmitted(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-          ));
+      context.read<AuthBloc>().add(
+        LoginSubmitted(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        ),
+      );
     }
   }
 
@@ -101,18 +109,22 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             );
           } else if (state is Authenticated) {
-            if (state.selectedOutletId == null || state.selectedOutletId!.isEmpty) {
+            if (state.selectedOutletId == null ||
+                state.selectedOutletId!.isEmpty) {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => OutletSelectScreen(storageService: widget.storageService),
+                  builder: (context) =>
+                      OutletSelectScreen(storageService: widget.storageService),
                 ),
               );
             } else {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CapabilityHomeScreen(storageService: widget.storageService),
+                  builder: (context) => CapabilityHomeScreen(
+                    storageService: widget.storageService,
+                  ),
                 ),
               );
             }
@@ -121,7 +133,9 @@ class _LoginScreenState extends State<LoginScreen> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const Size.fromWidth(400).width < MediaQuery.of(context).size.width
+              padding:
+                  const Size.fromWidth(400).width <
+                      MediaQuery.of(context).size.width
                   ? const EdgeInsets.symmetric(horizontal: 40.0, vertical: 20.0)
                   : const EdgeInsets.all(24.0),
               child: Form(
@@ -146,24 +160,35 @@ class _LoginScreenState extends State<LoginScreen> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: LinearGradient(
-                            colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
+                            colors: [
+                              theme.colorScheme.primary,
+                              theme.colorScheme.secondary,
+                            ],
                           ),
                           boxShadow: [
                             BoxShadow(
                               color: theme.colorScheme.primary.withOpacity(0.4),
                               blurRadius: 20,
                               spreadRadius: 2,
-                            )
+                            ),
                           ],
                         ),
-                        child: const Icon(Icons.shopping_bag_outlined, size: 40, color: Colors.white),
+                        child: const Icon(
+                          Icons.shopping_bag_outlined,
+                          size: 40,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
                     const Center(
                       child: Text(
                         'MorrusPOS Mobile',
-                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
                     const Center(
@@ -175,7 +200,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 48),
                     const Text(
                       'Masuk ke Akun Anda',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -210,10 +238,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                            _obscurePassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
                             color: Colors.white54,
                           ),
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword,
+                          ),
                         ),
                       ),
                       validator: (value) {
@@ -233,11 +265,17 @@ class _LoginScreenState extends State<LoginScreen> {
                               ? const SizedBox(
                                   height: 24,
                                   width: 24,
-                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
                                 )
                               : const Text(
                                   'Masuk Sekarang',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                         );
                       },
@@ -248,7 +286,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: _showServerConfigDialog,
                         child: const Text('Konfigurasi URL Server'),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),

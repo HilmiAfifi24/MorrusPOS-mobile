@@ -24,11 +24,17 @@ class CashierSessionModel extends CashierSessionEntity {
       userId: json['userId'] ?? '',
       userName: json['userName'] ?? '',
       openingTime: DateTime.parse(json['openingTime']),
-      closingTime: json['closingTime'] != null ? DateTime.parse(json['closingTime']) : null,
+      closingTime: json['closingTime'] != null
+          ? DateTime.parse(json['closingTime'])
+          : null,
       openingCash: (json['openingCash'] as num).toDouble(),
       expectedCash: (json['expectedCash'] as num).toDouble(),
-      actualCash: json['actualCash'] != null ? (json['actualCash'] as num).toDouble() : null,
-      variance: json['variance'] != null ? (json['variance'] as num).toDouble() : null,
+      actualCash: json['actualCash'] != null
+          ? (json['actualCash'] as num).toDouble()
+          : null,
+      variance: json['variance'] != null
+          ? (json['variance'] as num).toDouble()
+          : null,
       status: json['status'] ?? 'Open',
     );
   }

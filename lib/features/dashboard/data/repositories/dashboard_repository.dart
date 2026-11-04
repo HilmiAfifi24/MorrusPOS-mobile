@@ -70,18 +70,23 @@ class CashierDashboardData {
   });
 
   factory CashierDashboardData.fromJson(Map<String, dynamic> json) {
-    var pms = (json['paymentMethodsThisSession'] as List?)
-        ?.map((x) => PaymentMethodDistribution.fromJson(x))
-        .toList() ?? [];
-    var rtxs = (json['recentTransactions'] as List?)
-        ?.map((x) => RecentTransaction.fromJson(x))
-        .toList() ?? [];
+    var pms =
+        (json['paymentMethodsThisSession'] as List?)
+            ?.map((x) => PaymentMethodDistribution.fromJson(x))
+            .toList() ??
+        [];
+    var rtxs =
+        (json['recentTransactions'] as List?)
+            ?.map((x) => RecentTransaction.fromJson(x))
+            .toList() ??
+        [];
 
     return CashierDashboardData(
       activeSession: json['activeSession'] ?? false,
       sessionId: json['sessionId'],
       openingCash: (json['openingCash'] as num?)?.toDouble() ?? 0.0,
-      totalSalesThisSession: (json['totalSalesThisSession'] as num?)?.toDouble() ?? 0.0,
+      totalSalesThisSession:
+          (json['totalSalesThisSession'] as num?)?.toDouble() ?? 0.0,
       totalTransactionsThisSession: json['totalTransactionsThisSession'] ?? 0,
       paymentMethods: pms,
       recentTransactions: rtxs,
@@ -97,7 +102,11 @@ class DashboardRepository {
   Future<CashierDashboardData> getCashierDashboard(String outletId) async {
     try {
       final now = DateTime.now();
-      final startDate = DateTime(now.year, now.month, now.day).toUtc().toIso8601String();
+      final startDate = DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).toUtc().toIso8601String();
       final endDate = now.toUtc().toIso8601String();
 
       final response = await apiClient.get(

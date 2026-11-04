@@ -31,17 +31,17 @@ class CashierSessionEntity extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        outletId,
-        outletName,
-        userId,
-        userName,
-        openingTime,
-        closingTime,
-        openingCash,
-        expectedCash,
-        actualCash,
-        variance,
-        status,
-      ];
+    id,
+    outletId,
+    outletName,
+    userId,
+    userName,
+    openingTime,
+    closingTime,
+    openingCash,
+    expectedCash,
+    actualCash,
+    variance,
+    status,
+  ];
 }

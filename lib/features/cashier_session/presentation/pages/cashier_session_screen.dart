@@ -34,7 +34,7 @@ class _CashierSessionScreenState extends State<CashierSessionScreen> {
         final outletId = authState.selectedOutletId;
         if (outletId != null && outletId.isNotEmpty) {
           context.read<CashierSessionBloc>().add(CheckActiveSession(outletId));
-          
+
           final sessionState = context.read<CashierSessionBloc>().state;
           if (sessionState is ActiveSessionOpen) {
             _loadDashboardData(outletId);
@@ -62,7 +62,10 @@ class _CashierSessionScreenState extends State<CashierSessionScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _dashboardError = e.toString().replaceAll('Exception: ', '').replaceAll('ServerFailure: ', '');
+          _dashboardError = e
+              .toString()
+              .replaceAll('Exception: ', '')
+              .replaceAll('ServerFailure: ', '');
           _isLoadingDashboard = false;
         });
       }
@@ -80,8 +83,8 @@ class _CashierSessionScreenState extends State<CashierSessionScreen> {
     if (_formKey.currentState!.validate()) {
       final cash = double.tryParse(_openingCashController.text) ?? 0.0;
       context.read<CashierSessionBloc>().add(
-            OpenSessionSubmitted(outletId: outletId, openingCash: cash),
-          );
+        OpenSessionSubmitted(outletId: outletId, openingCash: cash),
+      );
     }
   }
 
@@ -89,8 +92,8 @@ class _CashierSessionScreenState extends State<CashierSessionScreen> {
     if (_formKey.currentState!.validate()) {
       final cash = double.tryParse(_actualCashController.text) ?? 0.0;
       context.read<CashierSessionBloc>().add(
-            CloseSessionSubmitted(sessionId: sessionId, actualCash: cash),
-          );
+        CloseSessionSubmitted(sessionId: sessionId, actualCash: cash),
+      );
     }
   }
 
@@ -111,18 +114,23 @@ class _CashierSessionScreenState extends State<CashierSessionScreen> {
             icon: const Icon(Icons.refresh),
             onPressed: () {
               if (outletId.isNotEmpty) {
-                context.read<CashierSessionBloc>().add(CheckActiveSession(outletId));
+                context.read<CashierSessionBloc>().add(
+                  CheckActiveSession(outletId),
+                );
                 _loadDashboardData(outletId);
               }
             },
-          )
+          ),
         ],
       ),
       body: BlocConsumer<CashierSessionBloc, CashierSessionState>(
         listener: (context, state) {
           if (state is CashierSessionFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: Colors.redAccent),
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.redAccent,
+              ),
             );
           } else if (state is ActiveSessionOpen) {
             _loadDashboardData(state.session.outletId);
@@ -158,7 +166,11 @@ class _CashierSessionScreenState extends State<CashierSessionScreen> {
                   shape: BoxShape.circle,
                   color: theme.colorScheme.primary.withOpacity(0.1),
                 ),
-                child: Icon(Icons.lock_open, size: 64, color: theme.colorScheme.primary),
+                child: Icon(
+                  Icons.lock_open,
+                  size: 64,
+                  color: theme.colorScheme.primary,
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -199,7 +211,10 @@ class _CashierSessionScreenState extends State<CashierSessionScreen> {
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: () => _openSession(outletId),
-              child: const Text('Buka Sesi Jualan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Buka Sesi Jualan',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
@@ -228,7 +243,9 @@ class _CashierSessionScreenState extends State<CashierSessionScreen> {
                 decoration: BoxDecoration(
                   color: theme.cardColor,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: theme.colorScheme.secondary.withOpacity(0.2)),
+                  border: Border.all(
+                    color: theme.colorScheme.secondary.withOpacity(0.2),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -238,27 +255,48 @@ class _CashierSessionScreenState extends State<CashierSessionScreen> {
                       children: [
                         const Text(
                           'Sesi Kasir Aktif',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.greenAccent),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.greenAccent,
+                          ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.green.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Text(
                             'OPEN',
-                            style: TextStyle(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: Colors.greenAccent,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        )
+                        ),
                       ],
                     ),
                     const Divider(height: 24, color: Colors.white10),
                     _buildDetailRow('Nama Kasir', session.userName),
                     _buildDetailRow('Outlet', session.outletName),
-                    _buildDetailRow('Waktu Buka', timeFormat.format(session.openingTime.toLocal())),
-                    _buildDetailRow('Modal Kas Awal', CurrencyFormatter.format(session.openingCash)),
-                    _buildDetailRow('Ekspektasi Kas Laci', CurrencyFormatter.format(session.expectedCash), isHighlight: true),
+                    _buildDetailRow(
+                      'Waktu Buka',
+                      timeFormat.format(session.openingTime.toLocal()),
+                    ),
+                    _buildDetailRow(
+                      'Modal Kas Awal',
+                      CurrencyFormatter.format(session.openingCash),
+                    ),
+                    _buildDetailRow(
+                      'Ekspektasi Kas Laci',
+                      CurrencyFormatter.format(session.expectedCash),
+                      isHighlight: true,
+                    ),
                   ],
                 ),
               ),
@@ -278,13 +316,22 @@ class _CashierSessionScreenState extends State<CashierSessionScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                     child: Column(
                       children: [
-                        const Icon(Icons.error_outline, color: Colors.redAccent),
+                        const Icon(
+                          Icons.error_outline,
+                          color: Colors.redAccent,
+                        ),
                         const SizedBox(height: 8),
-                        Text(_dashboardError!, style: const TextStyle(fontSize: 13, color: Colors.white60)),
+                        Text(
+                          _dashboardError!,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.white60,
+                          ),
+                        ),
                         TextButton(
                           onPressed: () => _loadDashboardData(session.outletId),
                           child: const Text('Coba Lagi'),
-                        )
+                        ),
                       ],
                     ),
                   ),
@@ -307,7 +354,9 @@ class _CashierSessionScreenState extends State<CashierSessionScreen> {
                       child: _buildKpiCard(
                         theme: theme,
                         title: 'Total Omzet',
-                        value: CurrencyFormatter.format(d.totalSalesThisSession),
+                        value: CurrencyFormatter.format(
+                          d.totalSalesThisSession,
+                        ),
                         icon: Icons.point_of_sale,
                         color: theme.colorScheme.primary,
                       ),
@@ -364,16 +413,23 @@ class _CashierSessionScreenState extends State<CashierSessionScreen> {
                           child: Column(
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     pm.method.toUpperCase(),
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                   Text(
                                     '${CurrencyFormatter.format(pm.amount)} (${pm.count}x)',
-                                    style: const TextStyle(fontSize: 13, color: Colors.white70),
-                                  )
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
                                 ],
                               ),
                               const SizedBox(height: 6),
@@ -386,7 +442,7 @@ class _CashierSessionScreenState extends State<CashierSessionScreen> {
                                     _getPaymentMethodColor(pm.method, theme),
                                   ),
                                 ),
-                              )
+                              ),
                             ],
                           ),
                         );
@@ -424,7 +480,8 @@ class _CashierSessionScreenState extends State<CashierSessionScreen> {
                     itemCount: d.recentTransactions.length,
                     itemBuilder: (context, index) {
                       final tx = d.recentTransactions[index];
-                      final formattedTime = '${tx.createdAt.hour.toString().padLeft(2, '0')}:${tx.createdAt.minute.toString().padLeft(2, '0')}';
+                      final formattedTime =
+                          '${tx.createdAt.hour.toString().padLeft(2, '0')}:${tx.createdAt.minute.toString().padLeft(2, '0')}';
                       return Container(
                         margin: const EdgeInsets.only(bottom: 8),
                         decoration: BoxDecoration(
@@ -436,15 +493,25 @@ class _CashierSessionScreenState extends State<CashierSessionScreen> {
                           dense: true,
                           title: Text(
                             tx.invoiceNumber,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
                           ),
                           subtitle: Text(
                             '$formattedTime • ${tx.paymentMethod.toUpperCase()}',
-                            style: const TextStyle(color: Colors.white30, fontSize: 11),
+                            style: const TextStyle(
+                              color: Colors.white30,
+                              fontSize: 11,
+                            ),
                           ),
                           trailing: Text(
                             CurrencyFormatter.format(tx.grandTotal),
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.greenAccent),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Colors.greenAccent,
+                            ),
                           ),
                         ),
                       );
@@ -473,12 +540,16 @@ class _CashierSessionScreenState extends State<CashierSessionScreen> {
                   prefixText: 'Rp ',
                   prefixIcon: Icon(Icons.calculate_outlined),
                 ),
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Kas aktual wajib diisi';
                   }
-                  if (double.tryParse(value) == null || double.parse(value) < 0) {
+                  if (double.tryParse(value) == null ||
+                      double.parse(value) < 0) {
                     return 'Nominal uang tidak valid';
                   }
                   return null;
@@ -492,7 +563,10 @@ class _CashierSessionScreenState extends State<CashierSessionScreen> {
                   shadowColor: Colors.redAccent.withOpacity(0.4),
                   minimumSize: const Size(double.infinity, 52),
                 ),
-                child: const Text('Tutup Sesi Kasir', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Tutup Sesi Kasir',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -533,11 +607,14 @@ class _CashierSessionScreenState extends State<CashierSessionScreen> {
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
@@ -556,13 +633,20 @@ class _CashierSessionScreenState extends State<CashierSessionScreen> {
     }
   }
 
-  Widget _buildDetailRow(String label, String value, {bool isHighlight = false}) {
+  Widget _buildDetailRow(
+    String label,
+    String value, {
+    bool isHighlight = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white60, fontSize: 13)),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white60, fontSize: 13),
+          ),
           Text(
             value,
             style: TextStyle(

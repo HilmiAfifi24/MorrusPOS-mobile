@@ -46,9 +46,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Keluar Akun'),
-        content: const Text('Apakah Anda yakin ingin keluar dari aplikasi MorrusPOS?'),
+        content: const Text(
+          'Apakah Anda yakin ingin keluar dari aplikasi MorrusPOS?',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context); // Close dialog
@@ -98,7 +103,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     backgroundColor: theme.colorScheme.primary.withOpacity(0.2),
                     child: Text(
                       name.substring(0, 1).toUpperCase(),
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -106,21 +115,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                        Text(
+                          name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
                         const SizedBox(height: 4),
-                        Text(email, style: const TextStyle(fontSize: 12, color: Colors.white38)),
+                        Text(
+                          email,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white38,
+                          ),
+                        ),
                         const SizedBox(height: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.secondary.withOpacity(0.12),
+                            color: theme.colorScheme.secondary.withOpacity(
+                              0.12,
+                            ),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             role.toUpperCase(),
-                            style: TextStyle(color: theme.colorScheme.secondary, fontSize: 10, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: theme.colorScheme.secondary,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        )
+                        ),
                       ],
                     ),
                   ),
@@ -128,7 +158,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 32),
-            const Text('Konfigurasi Koneksi Server', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text(
+              'Konfigurasi Koneksi Server',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: _urlController,
@@ -150,7 +183,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ElevatedButton.icon(
               onPressed: _logout,
               icon: const Icon(Icons.logout),
-              label: const Text('Keluar dari Aplikasi', style: TextStyle(fontWeight: FontWeight.bold)),
+              label: const Text(
+                'Keluar dari Aplikasi',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.redAccent.withOpacity(0.9),
                 shadowColor: Colors.redAccent.withOpacity(0.4),

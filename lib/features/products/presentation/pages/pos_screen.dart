@@ -21,6 +21,8 @@ import '../../../checkout/presentation/pages/transaction_history_screen.dart';
 import '../../../checkout/presentation/pages/settings_screen.dart';
 import '../../../capabilities/presentation/bloc/capability_bloc.dart';
 import '../../../capabilities/presentation/widgets/capability_gate.dart';
+import '../../domain/entities/product_entity.dart';
+import '../../domain/repositories/products_repository.dart';
 
 class PosScreen extends StatefulWidget {
   final StorageService storageService;
@@ -74,6 +76,303 @@ class _PosScreenState extends State<PosScreen> {
     }
   }
 
+  Future<Map<String, double>?> _selectBatchAllocations(
+    ProductEntity product,
+    ProductTrackingOptions options,
+  ) async {
+    final controller = TextEditingController(text: '1');
+    final existing = context
+        .read<CartBloc>()
+        .state
+        .items
+        .where((item) => item.productId == product.id)
+        .fold<Map<String, double>>({}, (value, item) => item.batchAllocations);
+    String? validationError;
+    final result = await showDialog<Map<String, double>>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Tambah batch (FEFO)'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: controller,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'Qty',
+                    errorText: validationError,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Dialokasikan otomatis dari kedaluwarsa terdekat:',
+                  style: TextStyle(fontSize: 12),
+                ),
+                const SizedBox(height: 6),
+                ...options.batches
+                    .take(5)
+                    .map(
+                      (batch) => Text(
+                        '${batch.batchNumber} • tersedia ${(batch.qtyRemaining - (existing[batch.id] ?? 0)).clamp(0, double.infinity)}${batch.expiryDate == null ? '' : ' • exp ${batch.expiryDate!.split('T').first}'}',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final wanted =
+                    double.tryParse(controller.text.replaceAll(',', '.')) ?? 0;
+                if (wanted <= 0) {
+                  setDialogState(
+                    () => validationError = 'Qty harus lebih besar dari 0.',
+                  );
+                  return;
+                }
+                var remaining = wanted;
+                final allocations = <String, double>{};
+                for (final batch in options.batches) {
+                  final available =
+                      batch.qtyRemaining - (existing[batch.id] ?? 0);
+                  if (available <= 0) continue;
+                  final qty = remaining < available ? remaining : available;
+                  allocations[batch.id] = qty;
+                  remaining -= qty;
+                  if (remaining <= 0.000001) break;
+                }
+                if (remaining > 0.000001) {
+                  setDialogState(
+                    () => validationError = 'Stok batch aktif tidak mencukupi.',
+                  );
+                  return;
+                }
+                Navigator.pop(dialogContext, allocations);
+              },
+              child: const Text('Tambahkan'),
+            ),
+          ],
+        ),
+      ),
+    );
+    controller.dispose();
+    return result;
+  }
+
+  Future<List<String>?> _selectSerials(
+    ProductEntity product,
+    String outletId,
+    ProductTrackingOptions options,
+  ) async {
+    final searchController = TextEditingController();
+    final alreadyInCart = context
+        .read<CartBloc>()
+        .state
+        .items
+        .where((item) => item.productId == product.id)
+        .expand((item) => item.serialIds)
+        .toSet();
+    final selected = <String>{};
+    final serials = <String, ProductSerialOption>{
+      for (final serial in options.serials)
+        if (!alreadyInCart.contains(serial.id)) serial.id: serial,
+    };
+    String? validationError;
+    var loading = false;
+
+    final result = await showDialog<List<String>>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Pilih serial / IMEI'),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 420,
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: searchController,
+                        decoration: const InputDecoration(
+                          hintText: 'Ketik atau scan serial / IMEI',
+                        ),
+                        onSubmitted: (_) async {
+                          setDialogState(() => loading = true);
+                          try {
+                            final found = await context
+                                .read<ProductsRepository>()
+                                .getTrackingOptions(
+                                  product.id,
+                                  outletId,
+                                  search: searchController.text,
+                                );
+                            setDialogState(() {
+                              for (final serial in found.serials) {
+                                if (!alreadyInCart.contains(serial.id))
+                                  serials[serial.id] = serial;
+                              }
+                              loading = false;
+                            });
+                          } catch (_) {
+                            setDialogState(() {
+                              loading = false;
+                              validationError = 'Serial tidak dapat dimuat.';
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                    if (loading)
+                      const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                  ],
+                ),
+                if (validationError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      validationError!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('${selected.length} serial dipilih'),
+                ),
+                const SizedBox(height: 4),
+                Expanded(
+                  child: serials.isEmpty
+                      ? const Center(
+                          child: Text('Serial tersedia tidak ditemukan.'),
+                        )
+                      : ListView(
+                          children: serials.values
+                              .map(
+                                (serial) => CheckboxListTile(
+                                  value: selected.contains(serial.id),
+                                  title: Text(serial.serialNumber),
+                                  onChanged: (checked) => setDialogState(() {
+                                    checked == true
+                                        ? selected.add(serial.id)
+                                        : selected.remove(serial.id);
+                                  }),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              onPressed: selected.isEmpty
+                  ? null
+                  : () => Navigator.pop(dialogContext, selected.toList()),
+              child: const Text('Tambahkan'),
+            ),
+          ],
+        ),
+      ),
+    );
+    searchController.dispose();
+    return result;
+  }
+
+  Future<void> _addProduct(ProductEntity product) async {
+    if (!ProductEntity.validTrackingModes.contains(product.trackingMode)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Mode tracking produk tidak dikenali. Produk tidak dapat dijual.',
+          ),
+        ),
+      );
+      return;
+    }
+    if (product.trackingMode == 'none' || product.trackingMode == 'quantity') {
+      context.read<CartBloc>().add(AddToCart(product));
+      return;
+    }
+
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! Authenticated ||
+        (authState.selectedOutletId ?? '').isEmpty)
+      return;
+
+    try {
+      final options = await context
+          .read<ProductsRepository>()
+          .getTrackingOptions(product.id, authState.selectedOutletId!);
+      if (!mounted) return;
+      if (options.trackingMode != product.trackingMode) {
+        throw Exception('Mode tracking produk berubah. Muat ulang katalog.');
+      }
+
+      if (product.trackingMode == 'batch') {
+        final allocations = await _selectBatchAllocations(product, options);
+        if (allocations != null && mounted) {
+          context.read<CartBloc>().add(
+            AddToCart(
+              product,
+              qty: allocations.values.fold(0, (sum, qty) => sum + qty),
+              batchAllocations: allocations,
+            ),
+          );
+        }
+        return;
+      }
+
+      final selected = await _selectSerials(
+        product,
+        authState.selectedOutletId!,
+        options,
+      );
+      if (selected != null && mounted) {
+        context.read<CartBloc>().add(
+          AddToCart(
+            product,
+            qty: selected.length.toDouble(),
+            serialIds: selected,
+          ),
+        );
+      }
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString().replaceAll('ServerFailure: ', '')),
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -102,7 +401,9 @@ class _PosScreenState extends State<PosScreen> {
             return Container(
               decoration: BoxDecoration(
                 color: theme.scaffoldBackgroundColor,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
                 border: Border.all(color: Colors.white10),
               ),
               child: BlocBuilder<CartBloc, CartState>(
@@ -112,9 +413,16 @@ class _PosScreenState extends State<PosScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.shopping_cart_outlined, size: 64, color: theme.colorScheme.primary.withOpacity(0.3)),
+                          Icon(
+                            Icons.shopping_cart_outlined,
+                            size: 64,
+                            color: theme.colorScheme.primary.withOpacity(0.3),
+                          ),
                           const SizedBox(height: 16),
-                          const Text('Keranjang belanja kosong', style: TextStyle(color: Colors.white30)),
+                          const Text(
+                            'Keranjang belanja kosong',
+                            style: TextStyle(color: Colors.white30),
+                          ),
                         ],
                       ),
                     );
@@ -135,14 +443,27 @@ class _PosScreenState extends State<PosScreen> {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 8,
+                        ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Detail Keranjang', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            const Text(
+                              'Detail Keranjang',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             TextButton(
-                              onPressed: () => context.read<CartBloc>().add(ClearCart()),
-                              child: const Text('Kosongkan', style: TextStyle(color: Colors.redAccent)),
+                              onPressed: () =>
+                                  context.read<CartBloc>().add(ClearCart()),
+                              child: const Text(
+                                'Kosongkan',
+                                style: TextStyle(color: Colors.redAccent),
+                              ),
                             ),
                           ],
                         ),
@@ -153,52 +474,111 @@ class _PosScreenState extends State<PosScreen> {
                           controller: scrollController,
                           padding: const EdgeInsets.all(20),
                           itemCount: state.items.length,
-                          separatorBuilder: (context, index) => const Divider(color: Colors.white10, height: 24),
+                          separatorBuilder: (context, index) =>
+                              const Divider(color: Colors.white10, height: 24),
                           itemBuilder: (context, index) {
                             final item = state.items[index];
                             return Row(
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Text(item.productName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                      Text(
+                                        item.productName,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                        ),
+                                      ),
                                       const SizedBox(height: 4),
                                       Text(
                                         '${CurrencyFormatter.format(item.unitPrice)} ${item.discountAmount > 0 ? "(-${CurrencyFormatter.format(item.discountAmount)})" : ""}',
-                                        style: TextStyle(fontSize: 12, color: theme.colorScheme.secondary),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: theme.colorScheme.secondary,
+                                        ),
                                       ),
+                                      if (item.trackingMode == 'batch' ||
+                                          item.trackingMode == 'serial')
+                                        Text(
+                                          item.trackingMode == 'batch'
+                                              ? '${item.batchAllocations.length} batch dipilih'
+                                              : '${item.serialIds.length} serial dipilih',
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.white54,
+                                          ),
+                                        ),
                                     ],
                                   ),
                                 ),
                                 Row(
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.remove_circle_outline, size: 22),
-                                      onPressed: () {
-                                        context.read<CartBloc>().add(UpdateQty(item.productId, item.qty - 1));
-                                      },
+                                      icon: const Icon(
+                                        Icons.remove_circle_outline,
+                                        size: 22,
+                                      ),
+                                      onPressed:
+                                          item.trackingMode == 'batch' ||
+                                              item.trackingMode == 'serial'
+                                          ? null
+                                          : () {
+                                              context.read<CartBloc>().add(
+                                                UpdateQty(
+                                                  item.productId,
+                                                  item.qty - 1,
+                                                ),
+                                              );
+                                            },
                                     ),
-                                    Text('${item.qty.toInt()}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                    Text(
+                                      '${item.qty.toInt()}',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                     IconButton(
-                                      icon: const Icon(Icons.add_circle_outline, size: 22),
-                                      onPressed: () {
-                                        context.read<CartBloc>().add(UpdateQty(item.productId, item.qty + 1));
-                                      },
+                                      icon: const Icon(
+                                        Icons.add_circle_outline,
+                                        size: 22,
+                                      ),
+                                      onPressed:
+                                          item.trackingMode == 'batch' ||
+                                              item.trackingMode == 'serial'
+                                          ? null
+                                          : () {
+                                              context.read<CartBloc>().add(
+                                                UpdateQty(
+                                                  item.productId,
+                                                  item.qty + 1,
+                                                ),
+                                              );
+                                            },
                                     ),
                                     const SizedBox(width: 8),
                                     // Discount Button
                                     IconButton(
-                                      icon: const Icon(Icons.discount_outlined, size: 20, color: Colors.amber),
-                                      onPressed: () => _showItemDiscountDialog(item),
+                                      icon: const Icon(
+                                        Icons.discount_outlined,
+                                        size: 20,
+                                        color: Colors.amber,
+                                      ),
+                                      onPressed: () =>
+                                          _showItemDiscountDialog(item),
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
                                       CurrencyFormatter.format(item.lineTotal),
-                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ],
-                                )
+                                ),
                               ],
                             );
                           },
@@ -208,36 +588,61 @@ class _PosScreenState extends State<PosScreen> {
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           color: theme.cardColor,
-                          border: const Border(top: BorderSide(color: Colors.white10)),
+                          border: const Border(
+                            top: BorderSide(color: Colors.white10),
+                          ),
                         ),
                         child: SafeArea(
                           child: Column(
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   const Text('Subtotal'),
-                                  Text(CurrencyFormatter.format(state.subtotal)),
+                                  Text(
+                                    CurrencyFormatter.format(state.subtotal),
+                                  ),
                                 ],
                               ),
                               if (state.discountTotal > 0) ...[
                                 const SizedBox(height: 8),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text('Total Diskon', style: TextStyle(color: Colors.amber)),
-                                    Text('- ${CurrencyFormatter.format(state.discountTotal)}', style: const TextStyle(color: Colors.amber)),
+                                    const Text(
+                                      'Total Diskon',
+                                      style: TextStyle(color: Colors.amber),
+                                    ),
+                                    Text(
+                                      '- ${CurrencyFormatter.format(state.discountTotal)}',
+                                      style: const TextStyle(
+                                        color: Colors.amber,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ],
                               const SizedBox(height: 12),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text('Total Bayar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                  const Text(
+                                    'Total Bayar',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                   Text(
                                     CurrencyFormatter.format(state.grandTotal),
-                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.primary,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -248,17 +653,24 @@ class _PosScreenState extends State<PosScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => const CapabilityGate(
-                                        requiredCapabilities: [
-                                          CapabilityCodes.salesPos,
-                                          CapabilityCodes.catalogProducts,
-                                        ],
-                                        child: CheckoutScreen(),
-                                      ),
+                                      builder: (context) =>
+                                          const CapabilityGate(
+                                            requiredCapabilities: [
+                                              CapabilityCodes.salesPos,
+                                              CapabilityCodes.catalogProducts,
+                                            ],
+                                            child: CheckoutScreen(),
+                                          ),
                                     ),
                                   );
                                 },
-                                child: const Text('Lanjut Pembayaran', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                child: const Text(
+                                  'Lanjut Pembayaran',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -276,7 +688,9 @@ class _PosScreenState extends State<PosScreen> {
   }
 
   void _showItemDiscountDialog(item) {
-    final controller = TextEditingController(text: item.discountAmount.toInt().toString());
+    final controller = TextEditingController(
+      text: item.discountAmount.toInt().toString(),
+    );
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -285,7 +699,10 @@ class _PosScreenState extends State<PosScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Masukkan nominal diskon (Rupiah) per unit:', style: TextStyle(color: Colors.white60, fontSize: 13)),
+            const Text(
+              'Masukkan nominal diskon (Rupiah) per unit:',
+              style: TextStyle(color: Colors.white60, fontSize: 13),
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: controller,
@@ -298,11 +715,16 @@ class _PosScreenState extends State<PosScreen> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
           ElevatedButton(
             onPressed: () {
               final double discount = double.tryParse(controller.text) ?? 0.0;
-              context.read<CartBloc>().add(UpdateDiscount(item.productId, discount));
+              context.read<CartBloc>().add(
+                UpdateDiscount(item.productId, discount),
+              );
               Navigator.pop(context);
             },
             child: const Text('Terapkan'),
@@ -318,10 +740,14 @@ class _PosScreenState extends State<PosScreen> {
     final authState = context.watch<AuthBloc>().state;
     final capabilityState = context.watch<CapabilityBloc>().state;
     final user = authState is Authenticated ? authState.user : null;
-    final canViewTransactions = user != null && canReadTransactions(user) &&
+    final canViewTransactions =
+        user != null &&
+        canReadTransactions(user) &&
         capabilityState is CapabilityLoaded &&
         capabilityState.has(CapabilityCodes.salesTransactions);
-    final canUsePos = user != null && canCreateTransactions(user) &&
+    final canUsePos =
+        user != null &&
+        canCreateTransactions(user) &&
         capabilityState is CapabilityLoaded &&
         capabilityState.has(CapabilityCodes.salesPos);
     String name = 'Kasir';
@@ -337,7 +763,10 @@ class _PosScreenState extends State<PosScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const Text('MorrusPOS POS', style: TextStyle(fontSize: 16)),
-            Text('$name ($role)', style: const TextStyle(fontSize: 11, color: Colors.white54)),
+            Text(
+              '$name ($role)',
+              style: const TextStyle(fontSize: 11, color: Colors.white54),
+            ),
           ],
         ),
         leading: IconButton(
@@ -346,7 +775,8 @@ class _PosScreenState extends State<PosScreen> {
             await Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => SettingsScreen(storageService: widget.storageService),
+                builder: (context) =>
+                    SettingsScreen(storageService: widget.storageService),
               ),
             );
             if (context.mounted) {
@@ -398,11 +828,18 @@ class _PosScreenState extends State<PosScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.lock_outline, size: 72, color: theme.colorScheme.primary.withOpacity(0.5)),
+                    Icon(
+                      Icons.lock_outline,
+                      size: 72,
+                      color: theme.colorScheme.primary.withOpacity(0.5),
+                    ),
                     const SizedBox(height: 20),
                     const Text(
                       'Sesi Kasir Belum Dibuka',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     const Text(
@@ -423,7 +860,9 @@ class _PosScreenState extends State<PosScreen> {
                           ),
                         );
                       },
-                      style: ElevatedButton.styleFrom(minimumSize: const Size(200, 52)),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(200, 52),
+                      ),
                       child: const Text('Buka Sesi Sekarang'),
                     ),
                   ],
@@ -447,7 +886,9 @@ class _PosScreenState extends State<PosScreen> {
                             icon: const Icon(Icons.clear),
                             onPressed: () {
                               _searchController.clear();
-                              context.read<ProductsBloc>().add(const SearchProducts(''));
+                              context.read<ProductsBloc>().add(
+                                const SearchProducts(''),
+                              );
                             },
                           )
                         : null,
@@ -470,8 +911,13 @@ class _PosScreenState extends State<PosScreen> {
                       itemCount: state.categories.length + 1,
                       itemBuilder: (context, index) {
                         final isAll = index == 0;
-                        final categoryId = isAll ? null : state.categories[index - 1];
-                        final categoryName = isAll ? 'Semua' : (state.categoryIdToName[categoryId] ?? 'Kategori');
+                        final categoryId = isAll
+                            ? null
+                            : state.categories[index - 1];
+                        final categoryName = isAll
+                            ? 'Semua'
+                            : (state.categoryIdToName[categoryId] ??
+                                  'Kategori');
                         final isSelected = isAll
                             ? state.selectedCategoryId == null
                             : state.selectedCategoryId == categoryId;
@@ -482,7 +928,9 @@ class _PosScreenState extends State<PosScreen> {
                             label: Text(categoryName),
                             selected: isSelected,
                             onSelected: (selected) {
-                              context.read<ProductsBloc>().add(FilterCategorySelected(categoryId));
+                              context.read<ProductsBloc>().add(
+                                FilterCategorySelected(categoryId),
+                              );
                             },
                           ),
                         );
@@ -515,21 +963,29 @@ class _PosScreenState extends State<PosScreen> {
                     }
 
                     if (state.filteredProducts.isEmpty) {
-                      return const Center(child: Text('Tidak ada produk ditemukan.'));
+                      return const Center(
+                        child: Text('Tidak ada produk ditemukan.'),
+                      );
                     }
 
                     return GridView.builder(
                       padding: const EdgeInsets.all(16),
-                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: 220,
-                        mainAxisSpacing: 16,
-                        crossAxisSpacing: 16,
-                        childAspectRatio: 0.72,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 220,
+                            mainAxisSpacing: 16,
+                            crossAxisSpacing: 16,
+                            childAspectRatio: 0.72,
+                          ),
                       itemCount: state.filteredProducts.length,
                       itemBuilder: (context, index) {
                         final product = state.filteredProducts[index];
-                        final hasStock = product.qtyOnHand > 0;
+                        final validTracking = ProductEntity.validTrackingModes
+                            .contains(product.trackingMode);
+                        final hasStock =
+                            validTracking &&
+                            (product.trackingMode == 'none' ||
+                                product.qtyOnHand > 0);
 
                         return Container(
                           decoration: BoxDecoration(
@@ -543,57 +999,102 @@ class _PosScreenState extends State<PosScreen> {
                               // Product network image loader with gradient fallback placeholder
                               Expanded(
                                 child: ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-                                  child: product.imageUrl != null && product.imageUrl!.isNotEmpty
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(15),
+                                  ),
+                                  child:
+                                      product.imageUrl != null &&
+                                          product.imageUrl!.isNotEmpty
                                       ? Image.network(
                                           '${widget.storageService.baseUrl}${product.imageUrl}',
                                           width: double.infinity,
                                           height: double.infinity,
                                           fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return Container(
-                                              width: double.infinity,
-                                              height: double.infinity,
-                                              decoration: const BoxDecoration(
-                                                gradient: LinearGradient(
-                                                  colors: [Color(0xFF3F4C6B), Color(0xFF606C88)],
-                                                  begin: Alignment.topLeft,
-                                                  end: Alignment.bottomRight,
-                                                ),
-                                              ),
-                                              child: Center(
-                                                child: Text(
-                                                  product.name.isNotEmpty ? product.name.substring(0, 1).toUpperCase() : 'P',
-                                                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white30),
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                          loadingBuilder: (context, child, loadingProgress) {
-                                            if (loadingProgress == null) return child;
-                                            return const Center(
-                                              child: SizedBox(
-                                                width: 24,
-                                                height: 24,
-                                                child: CircularProgressIndicator(strokeWidth: 2),
-                                              ),
-                                            );
-                                          },
+                                          errorBuilder:
+                                              (context, error, stackTrace) {
+                                                return Container(
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                  decoration:
+                                                      const BoxDecoration(
+                                                        gradient:
+                                                            LinearGradient(
+                                                              colors: [
+                                                                Color(
+                                                                  0xFF3F4C6B,
+                                                                ),
+                                                                Color(
+                                                                  0xFF606C88,
+                                                                ),
+                                                              ],
+                                                              begin: Alignment
+                                                                  .topLeft,
+                                                              end: Alignment
+                                                                  .bottomRight,
+                                                            ),
+                                                      ),
+                                                  child: Center(
+                                                    child: Text(
+                                                      product.name.isNotEmpty
+                                                          ? product.name
+                                                                .substring(0, 1)
+                                                                .toUpperCase()
+                                                          : 'P',
+                                                      style: const TextStyle(
+                                                        fontSize: 32,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.white30,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                          loadingBuilder:
+                                              (
+                                                context,
+                                                child,
+                                                loadingProgress,
+                                              ) {
+                                                if (loadingProgress == null)
+                                                  return child;
+                                                return const Center(
+                                                  child: SizedBox(
+                                                    width: 24,
+                                                    height: 24,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                        ),
+                                                  ),
+                                                );
+                                              },
                                         )
                                       : Container(
                                           width: double.infinity,
                                           height: double.infinity,
                                           decoration: const BoxDecoration(
                                             gradient: LinearGradient(
-                                              colors: [Color(0xFF3F4C6B), Color(0xFF606C88)],
+                                              colors: [
+                                                Color(0xFF3F4C6B),
+                                                Color(0xFF606C88),
+                                              ],
                                               begin: Alignment.topLeft,
                                               end: Alignment.bottomRight,
                                             ),
                                           ),
                                           child: Center(
                                             child: Text(
-                                              product.name.isNotEmpty ? product.name.substring(0, 1).toUpperCase() : 'P',
-                                              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white30),
+                                              product.name.isNotEmpty
+                                                  ? product.name
+                                                        .substring(0, 1)
+                                                        .toUpperCase()
+                                                  : 'P',
+                                              style: const TextStyle(
+                                                fontSize: 32,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white30,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -608,56 +1109,92 @@ class _PosScreenState extends State<PosScreen> {
                                       product.name,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
                                     ),
                                     const SizedBox(height: 4),
-                                    Text('SKU: ${product.sku}', style: const TextStyle(fontSize: 10, color: Colors.white30)),
+                                    Text(
+                                      'SKU: ${product.sku}',
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.white30,
+                                      ),
+                                    ),
                                     const SizedBox(height: 8),
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            CurrencyFormatter.format(product.basePrice),
+                                            CurrencyFormatter.format(
+                                              product.basePrice,
+                                            ),
                                             style: TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.bold,
-                                              color: theme.colorScheme.secondary,
+                                              color:
+                                                  theme.colorScheme.secondary,
                                             ),
                                           ),
                                         ),
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: hasStock ? Colors.white10 : Colors.red.withOpacity(0.2),
-                                            borderRadius: BorderRadius.circular(6),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 2,
                                           ),
-                                          child: Text(
-                                            hasStock ? 'Stok: ${product.qtyOnHand.toInt()}' : 'Habis',
-                                            style: TextStyle(
-                                              fontSize: 9,
-                                              color: hasStock ? Colors.white70 : Colors.redAccent,
+                                          decoration: BoxDecoration(
+                                            color: hasStock
+                                                ? Colors.white10
+                                                : Colors.red.withOpacity(0.2),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
                                             ),
                                           ),
-                                        )
+                                          child: Text(
+                                            !validTracking
+                                                ? 'Mode invalid'
+                                                : product.trackingMode == 'none'
+                                                ? 'Tanpa stok'
+                                                : hasStock
+                                                ? 'Stok: ${product.qtyOnHand.toInt()}'
+                                                : 'Habis',
+                                            style: TextStyle(
+                                              fontSize: 9,
+                                              color: hasStock
+                                                  ? Colors.white70
+                                                  : Colors.redAccent,
+                                            ),
+                                          ),
+                                        ),
                                       ],
                                     ),
                                     const SizedBox(height: 10),
                                     ElevatedButton(
                                       onPressed: hasStock
-                                          ? () {
-                                              context.read<CartBloc>().add(AddToCart(product));
-                                            }
+                                          ? () => _addProduct(product)
                                           : null,
                                       style: ElevatedButton.styleFrom(
-                                        minimumSize: const Size(double.infinity, 36),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        minimumSize: const Size(
+                                          double.infinity,
+                                          36,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
                                       ),
-                                      child: const Text('Tambah', style: TextStyle(fontSize: 12)),
+                                      child: const Text(
+                                        'Tambah',
+                                        style: TextStyle(fontSize: 12),
+                                      ),
                                     ),
                                   ],
                                 ),
-                              )
+                              ),
                             ],
                           ),
                         );
@@ -673,11 +1210,18 @@ class _PosScreenState extends State<PosScreen> {
                   return InkWell(
                     onTap: () => _showCartBottomSheet(theme),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
                       decoration: BoxDecoration(
                         color: theme.colorScheme.primary,
                         boxShadow: const [
-                          BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, -4))
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 10,
+                            offset: Offset(0, -4),
+                          ),
                         ],
                       ),
                       child: SafeArea(
@@ -687,7 +1231,10 @@ class _PosScreenState extends State<PosScreen> {
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.shopping_cart, color: Colors.white),
+                                const Icon(
+                                  Icons.shopping_cart,
+                                  color: Colors.white,
+                                ),
                                 const SizedBox(width: 12),
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -695,9 +1242,18 @@ class _PosScreenState extends State<PosScreen> {
                                   children: [
                                     Text(
                                       '${cartState.totalItemsCount} Item',
-                                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
                                     ),
-                                    const Text('Lihat Keranjang', style: TextStyle(fontSize: 11, color: Colors.white70)),
+                                    const Text(
+                                      'Lihat Keranjang',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.white70,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ],
@@ -705,13 +1261,22 @@ class _PosScreenState extends State<PosScreen> {
                             Row(
                               children: [
                                 Text(
-                                  CurrencyFormatter.format(cartState.grandTotal),
-                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                                  CurrencyFormatter.format(
+                                    cartState.grandTotal,
+                                  ),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
-                                const Icon(Icons.keyboard_arrow_up, color: Colors.white),
+                                const Icon(
+                                  Icons.keyboard_arrow_up,
+                                  color: Colors.white,
+                                ),
                               ],
-                            )
+                            ),
                           ],
                         ),
                       ),

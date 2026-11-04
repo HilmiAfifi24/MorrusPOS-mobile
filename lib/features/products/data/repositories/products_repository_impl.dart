@@ -31,4 +31,62 @@ class ProductsRepositoryImpl implements ProductsRepository {
       throw ServerFailure('Gagal memuat produk: koneksi bermasalah.');
     }
   }
+
+  @override
+  Future<ProductTrackingOptions> getTrackingOptions(
+    String productId,
+    String outletId, {
+    String? search,
+  }) async {
+    try {
+      final response = await apiClient.get(
+        '${ApiEndpoints.products}/$productId/stock-tracking',
+        queryParams: {
+          'outletId': outletId,
+          'take': '100',
+          if (search != null && search.trim().isNotEmpty)
+            'search': search.trim(),
+        },
+      );
+      if (response.statusCode != 200) {
+        throw failureFromResponse(
+          response,
+          'Gagal memuat batch atau serial produk.',
+        );
+      }
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final trackingMode = ProductEntity.parseTrackingMode(
+        json['trackingMode'],
+      );
+      if (trackingMode == 'invalid') {
+        throw const ServerFailure(
+          'Mode tracking produk tidak dikenali. Perbarui aplikasi atau hubungi admin.',
+        );
+      }
+      return ProductTrackingOptions(
+        trackingMode,
+        ((json['batches'] as List?) ?? const []).map((item) {
+          final value = item as Map<String, dynamic>;
+          return ProductBatchOption(
+            value['id'] ?? '',
+            value['batchNumber'] ?? '',
+            value['expiryDate'],
+            (value['qtyRemaining'] as num?)?.toDouble() ?? 0,
+          );
+        }).toList(),
+        ((json['serials'] as List?) ?? const []).map((item) {
+          final value = item as Map<String, dynamic>;
+          return ProductSerialOption(
+            value['id'] ?? '',
+            value['serialNumber'] ?? '',
+          );
+        }).toList(),
+      );
+    } catch (e) {
+      if (e is Failure) rethrow;
+      throw ServerFailure(
+        'Gagal memuat batch atau serial: koneksi bermasalah.',
+      );
+    }
+  }
 }

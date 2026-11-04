@@ -41,7 +41,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
     } catch (e) {
       if (e is Failure) rethrow;
-      throw ServerFailure('Tidak dapat terhubung ke server. Pastikan URL server benar.');
+      throw ServerFailure(
+        'Tidak dapat terhubung ke server. Pastikan URL server benar.',
+      );
     }
   }
 

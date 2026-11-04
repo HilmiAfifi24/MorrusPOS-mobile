@@ -14,12 +14,12 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
   String _generateUuid() {
     final random = Random.secure();
     final values = List<int>.generate(16, (i) => random.nextInt(256));
-    
+
     // Set version to 4 (random)
     values[6] = (values[6] & 0x0f) | 0x40;
     // Set variant to 10xx
     values[8] = (values[8] & 0x3f) | 0x80;
-    
+
     final buffer = StringBuffer();
     for (var i = 0; i < 16; i++) {
       if (i == 4 || i == 6 || i == 8 || i == 10) {
@@ -102,7 +102,9 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getRecentTransactions(String outletId) async {
+  Future<List<Map<String, dynamic>>> getRecentTransactions(
+    String outletId,
+  ) async {
     try {
       final response = await apiClient.get(
         ApiEndpoints.transactions,
@@ -113,7 +115,10 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
         final List<dynamic> data = jsonDecode(response.body);
         return data.map((x) => x as Map<String, dynamic>).toList();
       } else {
-        throw failureFromResponse(response, 'Gagal mengambil histori transaksi.');
+        throw failureFromResponse(
+          response,
+          'Gagal mengambil histori transaksi.',
+        );
       }
     } catch (e) {
       if (e is Failure) rethrow;
@@ -129,7 +134,10 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
       if (response.statusCode == 200) {
         return jsonDecode(response.body) as Map<String, dynamic>;
       } else {
-        throw failureFromResponse(response, 'Gagal mengambil detail transaksi.');
+        throw failureFromResponse(
+          response,
+          'Gagal mengambil detail transaksi.',
+        );
       }
     } catch (e) {
       if (e is Failure) rethrow;

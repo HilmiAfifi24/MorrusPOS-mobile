@@ -10,11 +10,19 @@ abstract class CartEvent extends Equatable {
 
 class AddToCart extends CartEvent {
   final ProductEntity product;
+  final double qty;
+  final Map<String, double> batchAllocations;
+  final List<String> serialIds;
 
-  const AddToCart(this.product);
+  const AddToCart(
+    this.product, {
+    this.qty = 1,
+    this.batchAllocations = const {},
+    this.serialIds = const [],
+  });
 
   @override
-  List<Object?> get props => [product];
+  List<Object?> get props => [product, qty, batchAllocations, serialIds];
 }
 
 class RemoveFromCart extends CartEvent {

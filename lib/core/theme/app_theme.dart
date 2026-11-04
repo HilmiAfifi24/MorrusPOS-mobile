@@ -9,7 +9,7 @@ class AppTheme {
   static const Color cardColor = Color(0xFF1E293B); // Slate 800
   static const Color textColor = Color(0xFFF8FAFC); // Slate 50
   static const Color textSecondaryColor = Color(0xFF94A3B8); // Slate 400
-  
+
   static ThemeData get darkTheme {
     return ThemeData(
       brightness: Brightness.dark,
@@ -23,32 +23,40 @@ class AppTheme {
       ),
       scaffoldBackgroundColor: backgroundColor,
       cardColor: cardColor,
-      textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme).copyWith(
-        bodyLarge: GoogleFonts.outfit(color: textColor),
-        bodyMedium: GoogleFonts.outfit(color: textSecondaryColor),
-        titleLarge: GoogleFonts.outfit(color: textColor, fontWeight: FontWeight.bold),
-      ),
+      textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme)
+          .copyWith(
+            bodyLarge: GoogleFonts.outfit(color: textColor),
+            bodyMedium: GoogleFonts.outfit(color: textSecondaryColor),
+            titleLarge: GoogleFonts.outfit(
+              color: textColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Color(0xFF1E293B),
         elevation: 0,
         centerTitle: true,
         iconTheme: IconThemeData(color: textColor),
-        titleTextStyle: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.bold),
+        titleTextStyle: TextStyle(
+          color: textColor,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
           foregroundColor: Colors.white,
           minimumSize: const Size(double.infinity, 52),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           elevation: 4,
           shadowColor: primaryColor.withOpacity(0.4),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: primaryColor,
-        ),
+        style: TextButton.styleFrom(foregroundColor: primaryColor),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,

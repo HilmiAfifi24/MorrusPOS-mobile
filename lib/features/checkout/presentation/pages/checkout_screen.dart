@@ -42,7 +42,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   double get _change {
     final paid = double.tryParse(_amountPaidController.text) ?? 0.0;
-    final total = ((_preview?['grandTotal'] as num?)?.toDouble()) ?? context.read<CartBloc>().state.grandTotal;
+    final total =
+        ((_preview?['grandTotal'] as num?)?.toDouble()) ??
+        context.read<CartBloc>().state.grandTotal;
     final value = paid - total;
     return value < 0 ? 0.0 : value;
   }
@@ -70,31 +72,47 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
 
     try {
-      final itemsPayload = cartState.items.map((item) => {
-        'productId': item.productId,
-        'qty': item.qty,
-        'unitPrice': item.unitPrice,
-        'discountAmount': item.discountAmount,
-      }).toList();
+      final itemsPayload = cartState.items
+          .map(
+            (item) => {
+              'productId': item.productId,
+              'qty': item.qty,
+              'unitPrice': item.unitPrice,
+              'discountAmount': item.discountAmount,
+            },
+          )
+          .toList();
       final capabilityState = context.read<CapabilityBloc>().state;
-      final canUseVoucher = capabilityState is CapabilityLoaded &&
+      final canUseVoucher =
+          capabilityState is CapabilityLoaded &&
           capabilityState.has(CapabilityCodes.pricingVouchers);
-      final result = await context.read<CheckoutBloc>().repository.previewPricing(
-        outletId: outletId,
-        items: itemsPayload,
-        voucherCode: canUseVoucher && _voucherController.text.trim().isNotEmpty
-            ? _voucherController.text.trim()
-            : null,
-      );
+      final result = await context
+          .read<CheckoutBloc>()
+          .repository
+          .previewPricing(
+            outletId: outletId,
+            items: itemsPayload,
+            voucherCode:
+                canUseVoucher && _voucherController.text.trim().isNotEmpty
+                ? _voucherController.text.trim()
+                : null,
+          );
       if (!mounted) return;
       setState(() {
         _preview = result;
-        _amountPaidController.text = (((result['grandTotal'] as num?)?.toDouble()) ?? cartState.grandTotal).toInt().toString();
+        _amountPaidController.text =
+            (((result['grandTotal'] as num?)?.toDouble()) ??
+                    cartState.grandTotal)
+                .toInt()
+                .toString();
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _previewError = e.toString().replaceAll('Exception: ', '').replaceAll('ServerFailure: ', '');
+        _previewError = e
+            .toString()
+            .replaceAll('Exception: ', '')
+            .replaceAll('ServerFailure: ', '');
         _preview = null;
       });
     } finally {
@@ -112,7 +130,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final authState = context.read<AuthBloc>().state;
       final sessionState = context.read<CashierSessionBloc>().state;
       final capabilityState = context.read<CapabilityBloc>().state;
-      final canUseVoucher = capabilityState is CapabilityLoaded &&
+      final canUseVoucher =
+          capabilityState is CapabilityLoaded &&
           capabilityState.has(CapabilityCodes.pricingVouchers);
 
       String outletId = '';
@@ -125,27 +144,38 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         sessionId = sessionState.session.id;
       }
 
-      final amount = double.tryParse(_amountPaidController.text) ?? cartState.grandTotal;
-      final grandTotal = ((_preview?['grandTotal'] as num?)?.toDouble()) ?? cartState.grandTotal;
+      final amount =
+          double.tryParse(_amountPaidController.text) ?? cartState.grandTotal;
+      final grandTotal =
+          ((_preview?['grandTotal'] as num?)?.toDouble()) ??
+          cartState.grandTotal;
 
       if (_selectedPaymentMethod == 'cash' && amount < grandTotal) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Uang yang dibayarkan kurang!'), backgroundColor: Colors.orangeAccent),
+          const SnackBar(
+            content: Text('Uang yang dibayarkan kurang!'),
+            backgroundColor: Colors.orangeAccent,
+          ),
         );
         return;
       }
 
-      context.read<CheckoutBloc>().add(SubmitCheckout(
-            items: cartState.items,
-            paymentMethod: _selectedPaymentMethod,
-            paymentAmount: _selectedPaymentMethod == 'cash' ? grandTotal : amount,
-            referenceNumber: _referenceController.text.trim().isEmpty ? null : _referenceController.text.trim(),
-            voucherCode: canUseVoucher && _voucherController.text.trim().isNotEmpty
-                ? _voucherController.text.trim()
-                : null,
-            outletId: outletId,
-            cashierSessionId: sessionId,
-          ));
+      context.read<CheckoutBloc>().add(
+        SubmitCheckout(
+          items: cartState.items,
+          paymentMethod: _selectedPaymentMethod,
+          paymentAmount: _selectedPaymentMethod == 'cash' ? grandTotal : amount,
+          referenceNumber: _referenceController.text.trim().isEmpty
+              ? null
+              : _referenceController.text.trim(),
+          voucherCode:
+              canUseVoucher && _voucherController.text.trim().isNotEmpty
+              ? _voucherController.text.trim()
+              : null,
+          outletId: outletId,
+          cashierSessionId: sessionId,
+        ),
+      );
     }
   }
 
@@ -154,15 +184,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final theme = Theme.of(context);
     final cartState = context.watch<CartBloc>().state;
     final capabilityState = context.watch<CapabilityBloc>().state;
-    final canUseVoucher = capabilityState is CapabilityLoaded &&
+    final canUseVoucher =
+        capabilityState is CapabilityLoaded &&
         capabilityState.has(CapabilityCodes.pricingVouchers);
-    final subtotal = ((_preview?['subtotal'] as num?)?.toDouble()) ?? cartState.subtotal;
-    final manualDiscount = ((_preview?['manualDiscountTotal'] as num?)?.toDouble()) ?? cartState.discountTotal;
-    final promoDiscount = ((_preview?['promoDiscountTotal'] as num?)?.toDouble()) ?? 0.0;
-    final voucherDiscount = ((_preview?['voucherDiscountTotal'] as num?)?.toDouble()) ?? 0.0;
-    final serviceChargeTotal = ((_preview?['serviceChargeTotal'] as num?)?.toDouble()) ?? 0.0;
+    final subtotal =
+        ((_preview?['subtotal'] as num?)?.toDouble()) ?? cartState.subtotal;
+    final manualDiscount =
+        ((_preview?['manualDiscountTotal'] as num?)?.toDouble()) ??
+        cartState.discountTotal;
+    final promoDiscount =
+        ((_preview?['promoDiscountTotal'] as num?)?.toDouble()) ?? 0.0;
+    final voucherDiscount =
+        ((_preview?['voucherDiscountTotal'] as num?)?.toDouble()) ?? 0.0;
+    final serviceChargeTotal =
+        ((_preview?['serviceChargeTotal'] as num?)?.toDouble()) ?? 0.0;
     final taxTotal = ((_preview?['taxTotal'] as num?)?.toDouble()) ?? 0.0;
-    final grandTotal = ((_preview?['grandTotal'] as num?)?.toDouble()) ?? cartState.grandTotal;
+    final grandTotal =
+        ((_preview?['grandTotal'] as num?)?.toDouble()) ?? cartState.grandTotal;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Checkout Penjualan')),
@@ -172,11 +210,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             context.read<CartBloc>().add(ClearCart());
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => SuccessScreen(transaction: state.transaction)),
+              MaterialPageRoute(
+                builder: (context) =>
+                    SuccessScreen(transaction: state.transaction),
+              ),
             );
           } else if (state is CheckoutFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: Colors.redAccent),
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.redAccent,
+              ),
             );
           }
         },
@@ -198,7 +242,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Ringkasan Tagihan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      const Text(
+                        'Ringkasan Tagihan',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
                       const Divider(height: 24, color: Colors.white10),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -213,7 +263,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text('Diskon Item'),
-                            Text('- ${CurrencyFormatter.format(manualDiscount)}', style: const TextStyle(color: Colors.amber)),
+                            Text(
+                              '- ${CurrencyFormatter.format(manualDiscount)}',
+                              style: const TextStyle(color: Colors.amber),
+                            ),
                           ],
                         ),
                       ],
@@ -223,7 +276,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text('Promo'),
-                            Text('- ${CurrencyFormatter.format(promoDiscount)}', style: const TextStyle(color: Colors.lightBlueAccent)),
+                            Text(
+                              '- ${CurrencyFormatter.format(promoDiscount)}',
+                              style: const TextStyle(
+                                color: Colors.lightBlueAccent,
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -233,7 +291,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text('Voucher'),
-                            Text('- ${CurrencyFormatter.format(voucherDiscount)}', style: const TextStyle(color: Colors.greenAccent)),
+                            Text(
+                              '- ${CurrencyFormatter.format(voucherDiscount)}',
+                              style: const TextStyle(color: Colors.greenAccent),
+                            ),
                           ],
                         ),
                       ],
@@ -261,10 +322,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Total yang Harus Dibayar', style: TextStyle(fontWeight: FontWeight.bold)),
+                          const Text(
+                            'Total yang Harus Dibayar',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                           Text(
                             CurrencyFormatter.format(grandTotal),
-                            style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 18),
+                            style: TextStyle(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
                           ),
                         ],
                       ),
@@ -282,17 +350,29 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         ),
                       if (_isPreviewLoading) ...[
                         const SizedBox(height: 8),
-                        const Text('Menghitung pricing terbaru...', style: TextStyle(fontSize: 12, color: Colors.white60)),
+                        const Text(
+                          'Menghitung pricing terbaru...',
+                          style: TextStyle(fontSize: 12, color: Colors.white60),
+                        ),
                       ],
                       if (_previewError != null) ...[
                         const SizedBox(height: 8),
-                        Text(_previewError!, style: const TextStyle(fontSize: 12, color: Colors.redAccent)),
+                        Text(
+                          _previewError!,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.redAccent,
+                          ),
+                        ),
                       ],
                     ],
                   ),
                 ),
                 const SizedBox(height: 28),
-                const Text('Metode Pembayaran', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const Text(
+                  'Metode Pembayaran',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
                 const SizedBox(height: 12),
                 // Payment Method Selector
                 GridView.count(
@@ -303,16 +383,39 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   mainAxisSpacing: 12,
                   childAspectRatio: 2.2,
                   children: [
-                    _buildPaymentMethodCard('cash', 'Tunai / Cash', Icons.payments_outlined, theme),
-                    _buildPaymentMethodCard('qris', 'QRIS', Icons.qr_code_scanner_outlined, theme),
-                    _buildPaymentMethodCard('edc', 'Kartu Debit / EDC', Icons.credit_card_outlined, theme),
-                    _buildPaymentMethodCard('transfer', 'Transfer Bank', Icons.account_balance_outlined, theme),
+                    _buildPaymentMethodCard(
+                      'cash',
+                      'Tunai / Cash',
+                      Icons.payments_outlined,
+                      theme,
+                    ),
+                    _buildPaymentMethodCard(
+                      'qris',
+                      'QRIS',
+                      Icons.qr_code_scanner_outlined,
+                      theme,
+                    ),
+                    _buildPaymentMethodCard(
+                      'edc',
+                      'Kartu Debit / EDC',
+                      Icons.credit_card_outlined,
+                      theme,
+                    ),
+                    _buildPaymentMethodCard(
+                      'transfer',
+                      'Transfer Bank',
+                      Icons.account_balance_outlined,
+                      theme,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 28),
                 if (_selectedPaymentMethod == 'cash') ...[
                   // Cash inputs
-                  const Text('Uang Diterima', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  const Text(
+                    'Uang Diterima',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _amountPaidController,
@@ -321,11 +424,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       prefixText: 'Rp ',
                       labelText: 'Nominal Pembayaran',
                     ),
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                     onChanged: (_) => setState(() {}),
                     validator: (val) {
-                      if (val == null || val.isEmpty) return 'Masukkan jumlah uang diterima';
-                      if (double.tryParse(val) == null) return 'Uang tidak valid';
+                      if (val == null || val.isEmpty)
+                        return 'Masukkan jumlah uang diterima';
+                      if (double.tryParse(val) == null)
+                        return 'Uang tidak valid';
                       return null;
                     },
                   ),
@@ -349,22 +457,34 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     decoration: BoxDecoration(
                       color: theme.colorScheme.secondary.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: theme.colorScheme.secondary.withOpacity(0.2)),
+                      border: Border.all(
+                        color: theme.colorScheme.secondary.withOpacity(0.2),
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Kembalian', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const Text(
+                          'Kembalian',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         Text(
                           CurrencyFormatter.format(_change),
-                          style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.secondary, fontSize: 20),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.secondary,
+                            fontSize: 20,
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ] else ...[
                   // Non-cash reference inputs
-                  const Text('Nomor Referensi Transaksi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  const Text(
+                    'Nomor Referensi Transaksi',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _referenceController,
@@ -383,7 +503,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       onPressed: isLoading ? null : _submit,
                       child: isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('Proses Checkout & Cetak Struk', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          : const Text(
+                              'Proses Checkout & Cetak Struk',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     );
                   },
                 ),
@@ -395,14 +521,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildPaymentMethodCard(String key, String title, IconData icon, ThemeData theme) {
+  Widget _buildPaymentMethodCard(
+    String key,
+    String title,
+    IconData icon,
+    ThemeData theme,
+  ) {
     final isSelected = _selectedPaymentMethod == key;
     return InkWell(
       onTap: () {
         setState(() {
           _selectedPaymentMethod = key;
           if (key != 'cash') {
-            _amountPaidController.text = context.read<CartBloc>().state.grandTotal.toInt().toString();
+            _amountPaidController.text = context
+                .read<CartBloc>()
+                .state
+                .grandTotal
+                .toInt()
+                .toString();
           }
         });
       },
@@ -410,7 +546,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? theme.colorScheme.primary.withOpacity(0.12) : theme.cardColor,
+          color: isSelected
+              ? theme.colorScheme.primary.withOpacity(0.12)
+              : theme.cardColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? theme.colorScheme.primary : Colors.white10,
@@ -419,7 +557,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ),
         child: Row(
           children: [
-            Icon(icon, color: isSelected ? theme.colorScheme.primary : Colors.white60, size: 24),
+            Icon(
+              icon,
+              color: isSelected ? theme.colorScheme.primary : Colors.white60,
+              size: 24,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -427,7 +569,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? theme.colorScheme.primary : Colors.white70,
+                  color: isSelected
+                      ? theme.colorScheme.primary
+                      : Colors.white70,
                 ),
               ),
             ),
