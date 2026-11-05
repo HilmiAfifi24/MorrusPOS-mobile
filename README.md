@@ -1,17 +1,21 @@
-# mobile_pos
+# MorrusPOS Mobile
 
-A new Flutter project.
+Aplikasi kasir Flutter untuk login, pemilihan outlet, sesi kasir, katalog, checkout, capability, dan pembaruan stok real-time.
 
-## Getting Started
+## Menjalankan
 
-This project is a starting point for a Flutter application.
+```bash
+flutter pub get
+flutter run
+```
 
-A few resources to get you started if this is your first Flutter project:
+URL backend dapat diatur dari halaman pengaturan aplikasi.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Quality checks
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+flutter analyze --no-fatal-infos
+flutter test --coverage
+```
+
+Test berada di `test/` dan mencakup auth, capability, sesi kasir, produk, tracking batch/serial, serta idempotency checkout. Repository palsu ditulis langsung dengan interface domain agar test tidak membutuhkan jaringan atau dependency mocking tambahan.
