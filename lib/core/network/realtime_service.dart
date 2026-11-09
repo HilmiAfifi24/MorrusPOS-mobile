@@ -6,6 +6,7 @@ class RealtimeService {
   final StorageService storageService;
   HubConnection? _hubConnection;
   String? _currentOutletId;
+  final Map<String, int> _lastSequenceByLocation = {};
 
   RealtimeService({required this.storageService});
 
@@ -59,6 +60,37 @@ class RealtimeService {
         } catch (e) {
           debugPrint('Error parsing stock update event arguments: $e');
         }
+      }
+    });
+
+    _hubConnection!.on('ReceiveStockUpdateV2', (arguments) {
+      debugPrint('SignalR: Received ReceiveStockUpdateV2 event: $arguments');
+      if (arguments == null || arguments.isEmpty) return;
+      try {
+        final data = Map<String, dynamic>.from(arguments[0] as Map);
+        final locationId = data['stockLocationId']?.toString();
+        final eventOutletId = data['outletId']?.toString();
+        final sequence = (data['sequence'] as num?)?.toInt();
+        if (locationId != null && sequence != null) {
+          final lastSequence = _lastSequenceByLocation[locationId] ?? 0;
+          if (sequence <= lastSequence) return;
+          _lastSequenceByLocation[locationId] = sequence;
+        }
+
+        // Mobile POS saat ini hanya menampilkan lokasi outlet aktif.
+        if (eventOutletId == null || eventOutletId != _currentOutletId) return;
+        final rawUpdates = data['updates'] as List<dynamic>;
+        final updates = rawUpdates.map((item) {
+          final map = Map<String, dynamic>.from(item as Map);
+          return <String, dynamic>{
+            'productId': map['productId'] as String,
+            'productVariantId': map['productVariantId']?.toString(),
+            'qty': (map['qty'] as num).toDouble(),
+          };
+        }).toList();
+        onStockUpdate?.call(eventOutletId, updates);
+      } catch (e) {
+        debugPrint('Error parsing stock update V2 arguments: $e');
       }
     });
 

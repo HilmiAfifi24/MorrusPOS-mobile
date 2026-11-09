@@ -10,14 +10,21 @@ class ApiClient {
 
   void Function(String capabilityCode)? onCapabilityDisabled;
 
-  Map<String, String> _headers([Map<String, String>? extra]) {
+  Future<Map<String, String>> _headers([Map<String, String>? extra]) async {
     final Map<String, String> headers = {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
+      // 'Accept': 'application/json',
+      'Accept': 'application/json'
     };
     final token = _storage.token;
     if (token != null) {
       headers['Authorization'] = 'Bearer $token';
+    }
+    final deviceId = await _storage.posDeviceId;
+    final deviceToken = await _storage.posDeviceToken;
+    if (deviceId != null && deviceToken != null) {
+      headers['X-POS-Device-ID'] = deviceId;
+      headers['X-POS-Device-Token'] = deviceToken;
     }
     if (extra != null) headers.addAll(extra);
     return headers;
@@ -35,7 +42,7 @@ class ApiClient {
       queryString = '?${parts.join('&')}';
     }
     final uri = Uri.parse('${_storage.baseUrl}$endpoint$queryString');
-    return _inspect(await _client.get(uri, headers: _headers()));
+    return _inspect(await _client.get(uri, headers: await _headers()));
   }
 
   Future<http.Response> post(
@@ -47,7 +54,7 @@ class ApiClient {
     return _inspect(
       await _client.post(
         uri,
-        headers: _headers(headers),
+        headers: await _headers(headers),
         body: body != null ? jsonEncode(body) : null,
       ),
     );
@@ -63,7 +70,7 @@ class ApiClient {
     return _inspect(
       await _client.put(
         uri,
-        headers: _headers(),
+        headers: await _headers(),
         body: body != null ? jsonEncode(body) : null,
       ),
     );
@@ -71,7 +78,7 @@ class ApiClient {
 
   Future<http.Response> delete(String endpoint) async {
     final uri = Uri.parse('${_storage.baseUrl}$endpoint');
-    return _inspect(await _client.delete(uri, headers: _headers()));
+    return _inspect(await _client.delete(uri, headers: await _headers()));
   }
 
   http.Response _inspect(http.Response response) {

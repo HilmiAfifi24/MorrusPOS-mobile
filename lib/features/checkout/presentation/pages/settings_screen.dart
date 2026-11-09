@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/storage_service.dart';
+import '../../../../core/network/api_client.dart';
+import 'device_activation_screen.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../../auth/presentation/bloc/auth_event.dart';
 import '../../../auth/presentation/bloc/auth_state.dart';
@@ -177,6 +179,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Text(
               'Ganti URL ini jika backend dideploy di komputer lain dalam satu jaringan WiFi local (misal: http://192.168.1.15:5100).',
               style: TextStyle(fontSize: 11, color: Colors.white30),
+            ),
+            const SizedBox(height: 28),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.phonelink_setup),
+              title: const Text('Aktivasi Perangkat POS'),
+              subtitle: const Text('Pasangkan aplikasi ini ke register kasir.'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DeviceActivationScreen(
+                    apiClient: context.read<ApiClient>(),
+                    storageService: widget.storageService,
+                  ),
+                ),
+              ),
             ),
             const SizedBox(height: 48),
             // Actions

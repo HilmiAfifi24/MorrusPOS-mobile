@@ -73,6 +73,7 @@ void main() async {
 
   runApp(
     MorrusPOSApp(
+      apiClient: apiClient,
       storageService: storageService,
       authRepository: authRepository,
       cashierSessionRepository: cashierSessionRepository,
@@ -87,6 +88,7 @@ void main() async {
 }
 
 class MorrusPOSApp extends StatelessWidget {
+  final ApiClient apiClient;
   final StorageService storageService;
   final AuthRepository authRepository;
   final CashierSessionRepository cashierSessionRepository;
@@ -99,6 +101,7 @@ class MorrusPOSApp extends StatelessWidget {
 
   const MorrusPOSApp({
     super.key,
+    required this.apiClient,
     required this.storageService,
     required this.authRepository,
     required this.cashierSessionRepository,
@@ -114,6 +117,7 @@ class MorrusPOSApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
       providers: [
+        RepositoryProvider<ApiClient>.value(value: apiClient),
         RepositoryProvider<AuthRepository>.value(value: authRepository),
         RepositoryProvider<CashierSessionRepository>.value(
           value: cashierSessionRepository,
@@ -147,7 +151,7 @@ class MorrusPOSApp extends StatelessWidget {
           BlocProvider<CapabilityBloc>.value(value: capabilityBloc),
         ],
         child: MaterialApp(
-          title: 'MorrusPOS Mobile',
+          title: 'MorrusPOS',
           themeMode: ThemeMode.dark,
           darkTheme: AppTheme.darkTheme,
           home: SplashScreen(storageService: storageService),
