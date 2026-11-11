@@ -15,3 +15,7 @@ bool canCreateTransactions(UserEntity user) =>
 
 bool canReadTransactions(UserEntity user) =>
     _transactionReadRoles.contains(user.role);
+
+bool canManageStock(UserEntity user) =>
+    user.permissions.contains('stock.manage') ||
+    {'Owner', 'Admin', 'KepalaCabang', 'Gudang'}.contains(user.role);

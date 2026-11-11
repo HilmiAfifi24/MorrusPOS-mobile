@@ -11,6 +11,7 @@ import '../../../checkout/presentation/pages/transaction_history_screen.dart';
 import '../../../products/presentation/pages/pos_screen.dart';
 import '../bloc/capability_bloc.dart';
 import '../widgets/capability_gate.dart';
+import '../../../inventory_transfer/presentation/pages/stock_transfer_screen.dart';
 
 class CapabilityHomeScreen extends StatefulWidget {
   final StorageService storageService;
@@ -44,10 +45,8 @@ class _CapabilityHomeScreenState extends State<CapabilityHomeScreen>
   void _reload() {
     if (!mounted) return;
     final auth = context.read<AuthBloc>().state;
-    if (auth is Authenticated && auth.selectedOutletId?.isNotEmpty == true) {
-      context.read<CapabilityBloc>().add(
-        LoadCapabilities(auth.selectedOutletId!),
-      );
+    if (auth is Authenticated) {
+      context.read<CapabilityBloc>().add(LoadCapabilities(auth.selectedOutletId));
     }
   }
 
@@ -65,7 +64,8 @@ class _CapabilityHomeScreenState extends State<CapabilityHomeScreen>
             ),
             (_) => false,
           );
-        } else if (state is Authenticated && state.selectedOutletId == null) {
+        } else if (state is Authenticated && state.selectedOutletId == null &&
+            !(canManageStock(state.user) && !canCreateTransactions(state.user))) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -112,6 +112,10 @@ class _CapabilityHomeScreenState extends State<CapabilityHomeScreen>
                 user != null &&
                 canReadTransactions(user) &&
                 state.has(CapabilityCodes.salesTransactions),
+            canManageTransfers:
+                user != null &&
+                canManageStock(user) &&
+                state.has(CapabilityCodes.inventoryTransfer),
           );
         },
       ),
@@ -166,11 +170,13 @@ class _LimitedHome extends StatelessWidget {
   final StorageService storageService;
   final bool posEnabled;
   final bool canViewTransactions;
+  final bool canManageTransfers;
 
   const _LimitedHome({
     required this.storageService,
     required this.posEnabled,
     required this.canViewTransactions,
+    required this.canManageTransfers,
   });
 
   @override
@@ -193,6 +199,20 @@ class _LimitedHome extends StatelessWidget {
           },
         ),
         actions: [
+          if (canManageTransfers)
+            IconButton(
+              tooltip: 'Transfer stok',
+              icon: const Icon(Icons.local_shipping_outlined),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const CapabilityGate(
+                    requiredCapabilities: [CapabilityCodes.inventoryTransfer],
+                    child: StockTransferScreen(),
+                  ),
+                ),
+              ),
+            ),
           if (canViewTransactions)
             IconButton(
               tooltip: 'Riwayat transaksi',

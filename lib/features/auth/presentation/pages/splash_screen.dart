@@ -6,6 +6,7 @@ import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
 import 'login_screen.dart';
 import 'outlet_select_screen.dart';
+import '../../domain/access_policy.dart';
 import '../../../capabilities/presentation/pages/capability_home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -38,8 +39,8 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
           );
         } else if (state is Authenticated) {
-          if (state.selectedOutletId == null ||
-              state.selectedOutletId!.isEmpty) {
+          final inventoryOnly = canManageStock(state.user) && !canCreateTransactions(state.user);
+          if ((state.selectedOutletId == null || state.selectedOutletId!.isEmpty) && !inventoryOnly) {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(

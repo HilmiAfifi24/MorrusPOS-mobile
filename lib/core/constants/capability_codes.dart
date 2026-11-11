@@ -3,4 +3,5 @@ class CapabilityCodes {
   static const String salesTransactions = 'sales.transactions';
   static const String catalogProducts = 'catalog.products';
   static const String pricingVouchers = 'pricing.vouchers';
+  static const String inventoryTransfer = 'inventory.transfer';
 }

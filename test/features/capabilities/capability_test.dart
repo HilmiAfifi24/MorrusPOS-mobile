@@ -54,7 +54,9 @@ void main() {
 
     expect(canCreateTransactions(warehouseUser), isFalse);
     expect(canReadTransactions(warehouseUser), isFalse);
+    expect(canManageStock(warehouseUser), isTrue);
     expect(canCreateTransactions(customUser), isTrue);
+    expect(canManageStock(customUser), isFalse);
   });
 
   test(
@@ -174,13 +176,13 @@ class _StaticCapabilityRepository implements CapabilityRepository {
   _StaticCapabilityRepository(this.snapshot);
 
   @override
-  Future<CapabilitySnapshotEntity> getEffective(String outletId) async =>
+  Future<CapabilitySnapshotEntity> getEffective(String? outletId) async =>
       snapshot;
 }
 
 class _FailingCapabilityRepository implements CapabilityRepository {
   @override
-  Future<CapabilitySnapshotEntity> getEffective(String outletId) {
+  Future<CapabilitySnapshotEntity> getEffective(String? outletId) {
     throw Exception('offline');
   }
 }

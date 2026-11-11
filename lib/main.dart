@@ -30,6 +30,7 @@ import 'features/dashboard/data/repositories/dashboard_repository.dart';
 import 'features/capabilities/data/repositories/capability_repository_impl.dart';
 import 'features/capabilities/domain/repositories/capability_repository.dart';
 import 'features/capabilities/presentation/bloc/capability_bloc.dart';
+import 'features/inventory_transfer/data/repositories/stock_transfer_repository.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -67,6 +68,7 @@ void main() async {
 
   final dashboardRepository = DashboardRepository(apiClient: apiClient);
   final capabilityRepository = CapabilityRepositoryImpl(apiClient: apiClient);
+  final stockTransferRepository = StockTransferRepository(apiClient);
   final capabilityBloc = CapabilityBloc(repository: capabilityRepository);
   apiClient.onCapabilityDisabled = (_) =>
       capabilityBloc.add(const CapabilitiesStale());
@@ -83,6 +85,7 @@ void main() async {
       dashboardRepository: dashboardRepository,
       capabilityRepository: capabilityRepository,
       capabilityBloc: capabilityBloc,
+      stockTransferRepository: stockTransferRepository,
     ),
   );
 }
@@ -98,6 +101,7 @@ class MorrusPOSApp extends StatelessWidget {
   final DashboardRepository dashboardRepository;
   final CapabilityRepository capabilityRepository;
   final CapabilityBloc capabilityBloc;
+  final StockTransferRepository stockTransferRepository;
 
   const MorrusPOSApp({
     super.key,
@@ -111,6 +115,7 @@ class MorrusPOSApp extends StatelessWidget {
     required this.dashboardRepository,
     required this.capabilityRepository,
     required this.capabilityBloc,
+    required this.stockTransferRepository,
   });
 
   @override
@@ -130,6 +135,9 @@ class MorrusPOSApp extends StatelessWidget {
         ),
         RepositoryProvider<CapabilityRepository>.value(
           value: capabilityRepository,
+        ),
+        RepositoryProvider<StockTransferRepository>.value(
+          value: stockTransferRepository,
         ),
       ],
       child: MultiBlocProvider(

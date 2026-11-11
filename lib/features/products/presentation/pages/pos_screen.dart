@@ -23,6 +23,7 @@ import '../../../capabilities/presentation/bloc/capability_bloc.dart';
 import '../../../capabilities/presentation/widgets/capability_gate.dart';
 import '../../domain/entities/product_entity.dart';
 import '../../domain/repositories/products_repository.dart';
+import '../../../inventory_transfer/presentation/pages/stock_transfer_screen.dart';
 
 class PosScreen extends StatefulWidget {
   final StorageService storageService;
@@ -750,6 +751,11 @@ class _PosScreenState extends State<PosScreen> {
         canCreateTransactions(user) &&
         capabilityState is CapabilityLoaded &&
         capabilityState.has(CapabilityCodes.salesPos);
+    final canManageTransfers =
+        user != null &&
+        canManageStock(user) &&
+        capabilityState is CapabilityLoaded &&
+        capabilityState.has(CapabilityCodes.inventoryTransfer);
     String name = 'Kasir';
     String role = 'Kasir';
     if (authState is Authenticated) {
@@ -785,6 +791,26 @@ class _PosScreenState extends State<PosScreen> {
           },
         ),
         actions: [
+          if (canManageTransfers)
+            IconButton(
+              tooltip: 'Transfer stok',
+              icon: const Icon(Icons.local_shipping_outlined),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CapabilityGate(
+                    requiredCapabilities: const [
+                      CapabilityCodes.inventoryTransfer,
+                    ],
+                    child: StockTransferScreen(
+                      initialLocationId: authState is Authenticated
+                          ? authState.selectedOutletId
+                          : null,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           if (canViewTransactions)
             IconButton(
               tooltip: 'Riwayat transaksi',

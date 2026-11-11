@@ -13,11 +13,11 @@ class CapabilityRepositoryImpl implements CapabilityRepository {
   CapabilityRepositoryImpl({required this.apiClient});
 
   @override
-  Future<CapabilitySnapshotEntity> getEffective(String outletId) async {
+  Future<CapabilitySnapshotEntity> getEffective(String? outletId) async {
     try {
       final response = await apiClient.get(
         ApiEndpoints.effectiveCapabilities,
-        queryParams: {'outletId': outletId},
+        queryParams: {if (outletId?.isNotEmpty == true) 'outletId': outletId!},
       );
       if (response.statusCode != 200) {
         throw failureFromResponse(response, 'Gagal memuat capability outlet.');

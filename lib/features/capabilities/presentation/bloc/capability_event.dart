@@ -8,7 +8,7 @@ sealed class CapabilityEvent extends Equatable {
 }
 
 class LoadCapabilities extends CapabilityEvent {
-  final String outletId;
+  final String? outletId;
 
   const LoadCapabilities(this.outletId);
 
